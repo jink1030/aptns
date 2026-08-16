@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM 영업관리 PoC 목업</title>
+<style>
+/* ===== 색 토큰 — 프로토타입 원본 확보 시 이 블록만 교체 (PRD §2 / §9) ===== */
+:root{
+  --bg:#F5F7FA;
+  --panel:#FFFFFF;
+  --line:#E3E8EF;
+  --ink:#1B2530;
+  --muted:#8A93A0;
+  --primary:#1D5A8E;
+  --primary-soft:#E8F1F9;
+  --new:#B23A1E;
+  --new-soft:#FBEAE5;
+  --ok:#1D6B58;
+  --ok-soft:#E4F1ED;
+  --warn:#B4680E;
+  --warn-soft:#FBEEDD;
+  --tbd:#5B6472;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic','맑은 고딕',sans-serif;
+  font-size:13px;line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit;font-size:13px;color:var(--ink);}
+button{cursor:pointer;}
+
+/* ===== 안내 바 ===== */
+.poc-bar{
+  background:var(--ink);color:#fff;font-size:11.5px;letter-spacing:.02em;
+  padding:6px 20px;text-align:center;
+}
+.poc-bar b{color:#FFD9CF;font-weight:600;}
+
+/* ===== 레이아웃 ===== */
+.app{display:flex;min-height:100vh;max-width:1680px;margin:0 auto;background:var(--bg);}
+.sidebar{
+  width:240px;flex:0 0 240px;background:var(--panel);
+  border-right:1px solid var(--line);padding:0 0 40px;
+}
+.brand{
+  height:56px;display:flex;align-items:center;gap:8px;
+  padding:0 20px;border-bottom:1px solid var(--line);
+}
+.brand .logo{
+  width:22px;height:22px;border-radius:5px;background:var(--primary);
+  color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;
+}
+.brand .nm{font-size:14px;font-weight:700;letter-spacing:-.01em;}
+.nav{padding:12px 10px;}
+.nav .item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px;border-radius:6px;color:#4A5563;font-size:13px;
+}
+.nav .item:hover{background:#F7F9FB;}
+.nav .item.open{color:var(--ink);font-weight:600;}
+.nav .item.active{background:var(--primary-soft);color:var(--primary);font-weight:700;}
+.nav .sub{padding:2px 0 6px 12px;display:none;}
+.nav .sub.open{display:block;}
+.nav .sub a{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:7px 12px;border-radius:6px;
+  color:#5A6472;text-decoration:none;font-size:12.5px;
+}
+.nav .sub a:hover{background:#F7F9FB;}
+.nav .sub a.active{background:var(--primary-soft);color:var(--primary);font-weight:700;}
+.nav .sub a.dim{opacity:.45;}
+.nav .sub a.dim:hover{background:none;cursor:default;}
+.nav .sub a .tag{
+  font-size:9.5px;color:#8A93A0;background:#EDEFF2;border-radius:3px;
+  padding:1px 5px;font-weight:600;white-space:nowrap;letter-spacing:.02em;
+}
+.nav .sub a .dot{
+  display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--new);margin-left:4px;vertical-align:1px;flex:0 0 auto;
+}
+.nav .sub a .nm{display:flex;align-items:center;}
+.nav .caret{font-size:9px;color:var(--muted);}
+
+/* 브레드크럼 */
+.crumb{font-size:12px;color:var(--muted);margin-top:14px;}
+.crumb b{color:#3C4855;font-weight:600;}
+.crumb .sep{margin:0 6px;color:#C6CDD6;}
+
+.main{flex:1;min-width:0;padding:24px 120px 90px;}
+
+/* ===== 시나리오 탭 ===== */
+.scenehead{margin-bottom:18px;}
+.scenehead h1{font-size:19px;font-weight:700;letter-spacing:-.02em;}
+.scenehead p{color:var(--muted);font-size:12.5px;margin-top:4px;}
+.tabs{display:flex;gap:6px;margin:16px 0 20px;border-bottom:1px solid var(--line);}
+.tabs button{
+  background:none;border:0;border-bottom:2px solid transparent;
+  padding:9px 16px;color:#6B7683;font-size:13px;font-weight:600;
+}
+.tabs button:hover{color:var(--ink);}
+.tabs button.on{color:var(--primary);border-bottom-color:var(--primary);}
+.scene{display:none;}
+.scene.on{display:block;}
+
+/* ===== 패널·폼 ===== */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;}
+.panel-hd{
+  height:48px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;border-bottom:1px solid var(--line);
+}
+.panel-hd .t{font-size:14px;font-weight:700;}
+.panel-bd{padding:0 0 4px;}
+.sec-t{
+  font-size:12.5px;font-weight:700;color:#3C4855;letter-spacing:-.01em;
+  padding:14px 18px 8px;display:flex;align-items:center;gap:8px;
+}
+.grid{
+  display:grid;grid-template-columns:150px 1fr 150px 1fr;
+  border-top:1px solid var(--line);
+}
+.grid .lb{
+  background:#FAFBFC;border-bottom:1px solid var(--line);border-right:1px solid var(--line);
+  padding:11px 14px;font-size:12.5px;font-weight:600;color:#3C4855;
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.grid .fd{
+  border-bottom:1px solid var(--line);padding:8px 14px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.grid .fd.col{align-items:stretch;flex-direction:column;gap:5px;}
+.grid .fd:not(:nth-child(4n)){border-right:1px solid var(--line);}
+.grid .fd.span3{border-right:0;}
+.span3{grid-column:span 3;}
+.req{color:var(--new);font-weight:700;}
+
+input[type=text],input[type=date],input[type=tel],select,textarea{
+  border:1px solid #D7DDE5;border-radius:4px;background:#fff;
+  padding:6px 9px;min-height:32px;outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-soft);}
+input[readonly]{background:#F1F3F6;color:#5A6472;}
+.f-full{width:100%;}
+.f-mid{width:220px;}
+.f-sm{width:150px;}
+textarea{width:100%;min-height:64px;resize:vertical;line-height:1.6;}
+.hint{font-size:11.5px;color:var(--muted);}
+
+.btn{
+  border:1px solid #D7DDE5;background:#fff;border-radius:4px;
+  padding:6px 12px;font-size:12.5px;font-weight:600;color:#3C4855;min-height:32px;
+}
+.btn:hover{background:#F7F9FB;}
+.btn-pri{background:var(--primary);border-color:var(--primary);color:#fff;}
+.btn-pri:hover{background:#174974;}
+.btn-new{border-color:var(--new);color:var(--new);background:#fff;}
+.btn-new:hover{background:var(--new-soft);}
+.btn-sm{padding:4px 10px;min-height:28px;font-size:12px;}
+.formfoot{
+  display:flex;justify-content:flex-end;gap:8px;
+  padding:14px 18px;border-top:1px solid var(--line);background:#FCFDFE;
+}
+
+/* ===== 배지 ===== */
+.badge{
+  display:inline-flex;align-items:center;border-radius:3px;
+  font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 6px;line-height:1.5;
+}
+.b-new{background:var(--new);color:#fff;}
+.b-plus{background:var(--new-soft);color:var(--new);border:1px solid #EFC7BB;}
+.b-tbd{background:#EDEFF2;color:var(--tbd);border:1px solid #DDE1E7;}
+.b-keep{background:#EDEFF2;color:#6B7683;}
+
+/* ===== ＋@ 영업 전용 섹션 ===== */
+.plusblock{border-left:3px solid var(--new);background:#FEFAF9;}
+.plusblock .sec-t{color:var(--new);}
+.plusblock .grid .lb{background:#FBF4F2;}
+
+/* ===== 매칭 배지 카드 (A분기) ===== */
+.matchcard{
+  margin:14px 18px 0;border:1px solid #BFDDD2;background:var(--ok-soft);
+  border-radius:6px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;gap:14px;
+}
+.matchcard .ttl{font-size:13.5px;font-weight:700;color:var(--ok);display:flex;align-items:center;gap:7px;}
+.matchcard .meta{font-size:12px;color:#476B60;margin-top:3px;}
+.matchcard .btn{border-color:var(--ok);color:var(--ok);background:#fff;}
+.matchcard .btn:hover{background:#F2FAF7;}
+
+.linkstrip{
+  margin:12px 18px 0;padding:8px 12px;border:1px solid var(--line);
+  background:#FAFBFC;border-radius:5px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-size:12px;color:#5A6472;
+}
+.linkstrip a{color:var(--primary);text-decoration:underline;cursor:pointer;font-weight:600;}
+.notestrip{
+  margin:0;padding:9px 18px;background:var(--new-soft);border-bottom:1px solid #F0D6CE;
+  font-size:12px;color:#8E3218;font-weight:600;
+}
+
+/* 하이라이트 — 자동으로 채워진 필드만 (PRD §4 ②A) */
+#fillZone input{transition:background .25s,border-color .25s;}
+.hl #f_complex,.hl #f_person,.hl #f_phone{background:var(--ok-soft)!important;border-color:#9CCBBB!important;}
+
+/* ===== 분기 토글 ===== */
+.branchbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.branchbar .lbl{font-size:12px;color:var(--muted);margin-right:2px;}
+.branchbar button{
+  border:1px solid #D7DDE5;background:#fff;border-radius:20px;
+  padding:6px 14px;font-size:12.5px;font-weight:600;color:#5A6472;
+}
+.branchbar button.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+
+/* ===== 슬라이더(드로어) ===== */
+.stage{position:relative;min-height:780px;}
+.behind{width:100%;opacity:.5;pointer-events:none;}
+.behind table{width:100%;border-collapse:collapse;background:#fff;font-size:12.5px;}
+.behind th{
+  background:#FAFBFC;text-align:left;font-weight:600;color:#5A6472;font-size:11.5px;
+  padding:9px 12px;border-bottom:1px solid var(--line);border-top:1px solid var(--line);
+}
+.behind td{padding:9px 12px;border-bottom:1px solid var(--line);color:#5A6472;}
+.drawer{
+  position:absolute;top:0;right:0;width:820px;background:var(--panel);
+  border:1px solid var(--line);border-radius:6px;
+  box-shadow:-10px 0 28px rgba(27,37,48,.12);
+}
+.drawer .f-mid{width:162px;}
+.drawer .grid{grid-template-columns:130px 1fr 130px 1fr;}
+.drawer .panel-hd .x{border:0;background:none;font-size:16px;color:var(--muted);line-height:1;}
+
+/* ===== 퍼널 ===== */
+.funnel{display:flex;align-items:center;gap:0;margin-bottom:18px;}
+.fcard{
+  flex:1;background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:20px 22px;
+}
+.fcard .k{font-size:12px;color:var(--muted);font-weight:600;}
+.fcard .v{font-size:30px;font-weight:700;letter-spacing:-.03em;margin-top:4px;}
+.fcard .u{font-size:13px;font-weight:600;color:var(--muted);margin-left:3px;}
+.farrow{
+  flex:0 0 120px;text-align:center;color:var(--muted);font-size:12px;position:relative;
+}
+.farrow .rate{font-size:15px;font-weight:700;color:var(--primary);}
+.farrow .ln{display:block;font-size:16px;color:#C6CDD6;line-height:1;margin-top:2px;}
+.filterbar{
+  background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:14px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.filterbar select{background:#F1F3F6;color:#8A93A0;}
+
+/* ===== 모달 ===== */
+.mask{
+  position:fixed;inset:0;background:rgba(27,37,48,.42);
+  display:none;align-items:center;justify-content:center;z-index:60;
+}
+.mask.on{display:flex;}
+.modal{
+  background:#fff;border-radius:8px;width:640px;max-width:92vw;
+  box-shadow:0 18px 48px rgba(27,37,48,.24);overflow:hidden;
+}
+.modal.wide{width:820px;}
+.modal-hd{
+  height:50px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;border-bottom:1px solid var(--line);font-size:14px;font-weight:700;
+}
+.modal-hd .x{border:0;background:none;font-size:17px;color:var(--muted);line-height:1;}
+.modal-bd{padding:16px 18px;max-height:64vh;overflow:auto;}
+.modal-ft{
+  display:flex;justify-content:flex-end;gap:8px;
+  padding:12px 18px;border-top:1px solid var(--line);background:#FCFDFE;
+}
+.mrow{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.mrow > label{width:110px;font-size:12.5px;font-weight:600;color:#3C4855;flex:0 0 110px;}
+.mnote{
+  background:#F7F9FB;border:1px solid var(--line);border-radius:5px;
+  padding:10px 12px;font-size:12px;color:#5A6472;margin-top:6px;
+}
+table.res{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px;}
+table.res th{
+  background:#FAFBFC;text-align:left;font-size:11.5px;color:#5A6472;font-weight:600;
+  padding:8px 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+}
+table.res td{padding:9px 10px;border-bottom:1px solid var(--line);}
+table.res tr.pick{cursor:pointer;}
+table.res tr.pick:hover{background:var(--primary-soft);}
+table.res tr.sel{background:var(--primary-soft);}
+.step{display:none;}
+.step.on{display:block;}
+.stepbar{display:flex;gap:16px;font-size:11.5px;color:var(--muted);margin-bottom:12px;}
+.stepbar b{color:var(--ink);}
+.radios{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+.radios label{
+  display:flex;align-items:center;gap:8px;border:1px solid var(--line);
+  border-radius:5px;padding:10px 12px;cursor:pointer;font-size:13px;
+}
+.radios label:hover{background:#F7F9FB;}
+
+/* ===== 토스트 ===== */
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(14px);
+  background:var(--ink);color:#fff;border-radius:6px;padding:11px 18px;
+  font-size:13px;font-weight:600;opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;z-index:90;box-shadow:0 8px 24px rgba(27,37,48,.28);
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="poc-bar">PoC 목업 — <b>실제 저장되지 않습니다.</b> 화면 구성과 동작 흐름 확인용입니다.</div>
+
+<div class="app">
+
+<!-- ===== 좌측 사이드바 ===== -->
+<aside class="sidebar">
+  <div class="brand"><span class="logo">A</span><span class="nm">CRM</span></div>
+  <nav class="nav">
+    <div class="item">대시보드</div>
+    <div class="item">진행상황관리 <span class="caret">▾</span></div>
+
+    <!-- ② 장면의 위치 -->
+    <div class="item" id="n-consult">통합 상담</div>
+
+    <!-- ③ 장면의 위치 -->
+    <div class="item" id="g-contract">계약 관리 <span class="caret">▾</span></div>
+    <div class="sub" id="sub-contract">
+      <a href="javascript:void(0)" id="n-contract"><span class="nm">계약 관리</span></a>
+    </div>
+
+    <div class="item">단지관리 <span class="caret">▾</span></div>
+    <div class="item">사용자관리 <span class="caret">▾</span></div>
+
+    <!-- ① 장면의 위치 · 하위 메뉴는 현행 그대로 유지 -->
+    <div class="item" id="g-sales">영업관리 <span class="caret">▾</span></div>
+    <div class="sub" id="sub-sales">
+      <a href="javascript:void(0)" class="dim"><span class="nm">배너 관리</span><span class="tag">이번 범위 아님</span></a>
+      <a href="javascript:void(0)" id="n-sales-hist"><span class="nm">영업이력<span class="dot"></span></span></a>
+      <a href="javascript:void(0)" class="dim"><span class="nm">기회 관리</span><span class="tag">O3</span></a>
+      <a href="javascript:void(0)" class="dim"><span class="nm">교육 DB</span><span class="tag">이번 범위 아님</span></a>
+      <a href="javascript:void(0)" class="dim"><span class="nm">발굴 DB</span><span class="tag">이번 범위 아님</span></a>
+    </div>
+
+    <!-- ④ 장면의 위치 -->
+    <div class="item" id="g-perf">성과 분석 <span class="caret">▾</span></div>
+    <div class="sub" id="sub-perf">
+      <a href="javascript:void(0)" id="n-funnel"><span class="nm">전환 퍼널</span><span class="badge b-tbd">확인 필요</span></a>
+    </div>
+
+    <div class="item">매출관리 <span class="caret">▾</span></div>
+    <div class="item">시스템관리 <span class="caret">▾</span></div>
+  </nav>
+</aside>
+
+<main class="main">
+
+  <div class="scenehead">
+    <h1>영업관리 개선 1차 — PoC 목업</h1>
+    <p>현행 화면에 최소 변경을 얹는다. 아래 4개 장면으로 변경 지점 전체를 확인할 수 있다.</p>
+    <div class="crumb" id="crumb"><b>영업관리</b><span class="sep">/</span>영업이력 등록</div>
+  </div>
+
+  <div class="tabs">
+    <button class="on" data-scene="s1" onclick="goScene('s1',this)">① 영업이력 등록</button>
+    <button data-scene="s2" onclick="goScene('s2',this)">② 인바운드 매칭</button>
+    <button data-scene="s3" onclick="goScene('s3',this)">③ 계약 등록</button>
+    <button data-scene="s4" onclick="goScene('s4',this)">④ 전환 퍼널</button>
+  </div>
+
+<!-- ===== 장면 ① 영업이력 등록 ===== -->
+<section class="scene on" id="s1">
+  <div class="panel">
+    <div class="panel-hd">
+      <span class="t">영업이력 등록 <span class="badge b-new" style="margin-left:6px;">신규 화면</span></span>
+      <span class="hint">기존 인바운드 등록 폼과 동일한 골격 · 영업 전용 항목 4종만 추가</span>
+    </div>
+    <div class="panel-bd">
+
+      <div class="sec-t">기본 정보</div>
+      <div class="grid">
+        <div class="lb">담당 부서</div>
+        <div class="fd"><input type="text" class="f-mid" value="영업팀" readonly><span class="hint">로그인 사용자 기준 자동</span></div>
+        <div class="lb">담당자</div>
+        <div class="fd"><input type="text" class="f-mid" value="최영업" readonly><span class="hint">입력 0회</span></div>
+
+        <div class="lb">기회코드</div>
+        <div class="fd">
+          <input type="text" class="f-mid" value="자동 채번" readonly>
+          <span class="badge b-tbd">미확정</span>
+          <span class="hint">채번 규칙·명칭 DB 협의 중 · 사용자 입력 불가</span>
+        </div>
+        <div class="lb">등록일시</div>
+        <div class="fd"><input type="text" class="f-mid" value="2026-08-16 14:20" readonly></div>
+      </div>
+
+      <div class="sec-t">단지 · 고객</div>
+      <div class="grid">
+        <div class="lb">단지명 <span class="req">*</span></div>
+        <div class="fd">
+          <input type="text" class="f-mid" placeholder="단지명 검색">
+          <button class="btn btn-sm">검색</button>
+          <button class="btn btn-sm btn-new" onclick="openModal('m-complex')">＋ 신규 단지 가등록</button>
+        </div>
+        <div class="lb">단지 지역</div>
+        <div class="fd"><input type="text" class="f-mid" placeholder="단지 선택 시 자동" readonly></div>
+
+        <div class="lb">소장 / 담당자</div>
+        <div class="fd"><input type="text" class="f-mid" placeholder="담당자 검색"><button class="btn btn-sm">검색</button></div>
+        <div class="lb">직책</div>
+        <div class="fd"><input type="text" class="f-sm" placeholder="예: 관리소장"></div>
+
+        <div class="lb">연락처 <span class="req">*</span></div>
+        <div class="fd col">
+          <div><input type="tel" class="f-mid" placeholder="010-0000-0000"></div>
+          <span class="hint">인바운드 자동 인식의 키 — 이 번호로 걸려오면 상담 화면에 기회가 자동으로 뜬다</span>
+        </div>
+        <div class="lb">이메일</div>
+        <div class="fd"><input type="text" class="f-mid" placeholder="선택"></div>
+      </div>
+
+      <div class="sec-t">상담 내용</div>
+      <div class="grid">
+        <div class="lb">내용</div>
+        <div class="fd span3"><textarea placeholder="영업 활동 내용을 입력하세요"></textarea></div>
+        <div class="lb">처리 내용</div>
+        <div class="fd span3"><textarea placeholder="처리 결과를 입력하세요"></textarea></div>
+      </div>
+
+      <!-- ＋@ 영업 전용 항목 -->
+      <div class="plusblock">
+        <div class="sec-t">
+          영업 전용 항목
+          <span class="badge b-plus">＋@ 4종</span>
+          <span class="hint" style="font-weight:400;">여기까지가 기존 폼과의 차이 전부다</span>
+        </div>
+        <div class="grid">
+          <div class="lb">영업 채널 <span class="badge b-plus">＋@</span></div>
+          <div class="fd">
+            <select class="f-mid"><option>발굴</option><option>교육</option><option>소개</option><option>재유입</option></select>
+          </div>
+          <div class="lb">컨택 방법 <span class="badge b-plus">＋@</span></div>
+          <div class="fd">
+            <select class="f-mid"><option>방문</option><option>전화</option><option>교육현장</option><option>온라인</option></select>
+          </div>
+
+          <div class="lb">제안 상품 <span class="badge b-plus">＋@</span></div>
+          <div class="fd">
+            <select class="f-mid"><option>장수계</option><option>안전점검</option><option>기타</option></select>
+          </div>
+          <div class="lb">예상 계약형태 <span class="badge b-plus">＋@</span></div>
+          <div class="fd">
+            <select class="f-sm"><option>월납</option><option>일시납</option></select>
+            <span class="hint">월납 전환 분석의 키</span>
+          </div>
+
+          <div class="lb">다음 액션 <span class="badge b-plus">＋@</span></div>
+          <div class="fd">
+            <select class="f-mid"><option>재컨택</option><option>견적 발송</option><option>보류</option></select>
+          </div>
+          <div class="lb">예정일 <span class="badge b-plus">＋@</span></div>
+          <div class="fd col">
+            <div><input type="date" class="f-sm" value="2026-08-24"></div>
+            <span class="hint">일정 기간 무접점이면 기회가 자동 보류로 전환됩니다 <span class="badge b-tbd">미확정</span> 기준 기간 경영 협의 중</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="formfoot">
+        <button class="btn">취소</button>
+        <button class="btn btn-pri" onclick="toast('영업이력이 등록되고 기회가 생성되었습니다 (기회코드 자동 채번)')">저장</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 장면 ② 인바운드 매칭 ===== -->
+<section class="scene" id="s2">
+
+  <div class="branchbar">
+    <span class="lbl">분기 전환</span>
+    <button class="on" id="bA" onclick="setBranch('A',this)">A · 아는 번호</button>
+    <button id="bB" onclick="setBranch('B',this)">B · 모르는 번호</button>
+    <button id="bC" onclick="setBranch('C',this)">C · 매칭 없음</button>
+    <span class="hint" id="branchNote" style="margin-left:6px;">연락처가 이미 시스템에 있는 경우 — 상담사는 배지를 확인하고 한 번 누른다</span>
+  </div>
+
+  <div class="stage">
+    <div class="behind">
+      <table>
+        <thead><tr><th>접수일시</th><th>유형</th><th>단지명</th><th>담당자</th><th>처리상태</th></tr></thead>
+        <tbody>
+          <tr><td>2026-08-16 14:02</td><td>전화</td><td>새빛 1단지</td><td>상담 A</td><td>처리중</td></tr>
+          <tr><td>2026-08-16 11:37</td><td>홈페이지</td><td>푸른숲 아파트</td><td>상담 B</td><td>완료</td></tr>
+          <tr><td>2026-08-15 17:10</td><td>카카오톡</td><td>행복마을 2단지</td><td>상담 A</td><td>완료</td></tr>
+          <tr><td>2026-08-15 09:44</td><td>전화</td><td>한빛 아파트</td><td>상담 C</td><td>완료</td></tr>
+          <tr><td>2026-08-14 16:21</td><td>전화</td><td>솔밭마을</td><td>상담 B</td><td>완료</td></tr>
+          <tr><td>2026-08-14 13:05</td><td>홈페이지</td><td>가온 아파트</td><td>상담 A</td><td>완료</td></tr>
+          <tr><td>2026-08-13 15:52</td><td>전화</td><td>새빛 2단지</td><td>상담 C</td><td>완료</td></tr>
+          <tr><td>2026-08-13 10:18</td><td>카카오톡</td><td>미르마을</td><td>상담 B</td><td>완료</td></tr>
+          <tr><td>2026-08-12 16:40</td><td>전화</td><td>은하수 아파트</td><td>상담 A</td><td>완료</td></tr>
+          <tr><td>2026-08-12 09:12</td><td>전화</td><td>돌샘마을 3단지</td><td>상담 C</td><td>완료</td></tr>
+          <tr><td>2026-08-11 17:33</td><td>홈페이지</td><td>바람언덕 아파트</td><td>상담 B</td><td>완료</td></tr>
+          <tr><td>2026-08-11 11:26</td><td>전화</td><td>한빛 2단지</td><td>상담 A</td><td>완료</td></tr>
+          <tr><td>2026-08-10 14:09</td><td>전화</td><td>초록뜰 아파트</td><td>상담 C</td><td>완료</td></tr>
+          <tr><td>2026-08-10 10:55</td><td>카카오톡</td><td>노을마을 1단지</td><td>상담 B</td><td>완료</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="drawer">
+      <div class="panel-hd">
+        <span class="t">인바운드 등록 <span class="badge b-keep" style="margin-left:6px;">현행 화면</span></span>
+        <button class="x">✕</button>
+      </div>
+
+      <!-- A분기 매칭 배지 카드 -->
+      <div class="matchcard" id="matchCard">
+        <div>
+          <div class="ttl">🟢 이 단지에 진행중인 영업 기회 1건</div>
+          <div class="meta">담당 최영업 · 최근 컨택 2026-08-11 · 채널 교육</div>
+        </div>
+        <button class="btn" onclick="connectA()">연결하기</button>
+      </div>
+
+      <!-- B분기 검색 버튼 -->
+      <div class="linkstrip" id="searchStrip" style="display:none;">
+        <span>고객이 영업 접촉을 언급했다면 영업이력을 찾아 연결할 수 있습니다.</span>
+        <button class="btn btn-sm" onclick="openSearch()">🔍 영업이력 검색</button>
+      </div>
+
+      <!-- 연결 후 해제 안내 -->
+      <div class="linkstrip" id="unlinkStrip" style="display:none;">
+        <span>영업이력이 연결되었습니다. 잘못 연결한 경우 해제할 수 있으며, 해제·재연결 이력이 기록됩니다.</span>
+        <a onclick="unlink()">연결 해제</a>
+      </div>
+
+      <div class="panel-bd">
+        <div class="sec-t">접수 정보</div>
+        <div class="grid">
+          <div class="lb">담당 부서</div>
+          <div class="fd"><input type="text" class="f-mid" value="상담팀" readonly></div>
+          <div class="lb">담당자</div>
+          <div class="fd"><input type="text" class="f-mid" value="홍길동" readonly></div>
+
+          <div class="lb">접수일시</div>
+          <div class="fd"><input type="text" class="f-mid" value="2026-08-16 14:02" readonly></div>
+          <div class="lb">인바운드 유형</div>
+          <div class="fd"><select class="f-sm"><option>전화</option><option>홈페이지</option><option>카카오톡</option></select></div>
+        </div>
+
+        <div class="sec-t">단지 · 고객</div>
+        <div class="grid" id="fillZone">
+          <div class="lb">단지명 <span class="req">*</span></div>
+          <div class="fd"><input type="text" class="f-mid" id="f_complex" placeholder="단지명 검색"><button class="btn btn-sm">검색</button></div>
+          <div class="lb">소장 / 담당자</div>
+          <div class="fd"><input type="text" class="f-mid" id="f_person" placeholder="담당자 검색"><button class="btn btn-sm">검색</button></div>
+
+          <div class="lb">연락처 <span class="req">*</span></div>
+          <div class="fd"><input type="tel" class="f-mid" id="f_phone" value="010-2345-6789"></div>
+          <div class="lb">문의 유형</div>
+          <div class="fd"><select class="f-sm"><option>상품 문의</option><option>견적 요청</option><option>계약 문의</option><option>기타</option></select></div>
+        </div>
+
+        <div class="sec-t">상담 내용</div>
+        <div class="grid">
+          <div class="lb">내용</div>
+          <div class="fd span3"><textarea id="f_memo" placeholder="문의 내용을 입력하세요"></textarea></div>
+          <div class="lb">처리 내용</div>
+          <div class="fd span3"><textarea placeholder="처리 결과를 입력하세요"></textarea></div>
+          <div class="lb">처리 상태</div>
+          <div class="fd"><select class="f-sm"><option>처리중</option><option>완료</option><option>보류</option></select></div>
+          <div class="lb">처리일</div>
+          <div class="fd"><input type="date" class="f-sm" value="2026-08-16"></div>
+        </div>
+
+        <div class="formfoot">
+          <button class="btn">취소</button>
+          <button class="btn btn-pri" onclick="toast('인바운드가 등록되었습니다')">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 장면 ③ 계약 등록 ===== -->
+<section class="scene" id="s3">
+  <div class="panel">
+    <div class="notestrip">이 계약은 영업 기회에서 전환되었습니다 — 담당 최영업</div>
+    <div class="panel-hd">
+      <span class="t">신규 계약 등록 <span class="badge b-keep" style="margin-left:6px;">현행 화면</span></span>
+      <span class="hint">기존 필드 그대로 · 붉은 <b>NEW</b> 2개만 추가되었습니다</span>
+    </div>
+    <div class="panel-bd">
+
+      <div class="sec-t">계약 기본</div>
+      <div class="grid">
+        <div class="lb">계약 구분 <span class="req">*</span></div>
+        <div class="fd"><select class="f-mid"><option>신규</option><option>재계약</option><option>변경</option></select></div>
+        <div class="lb">계약 상태</div>
+        <div class="fd"><select class="f-sm"><option>작성중</option><option>승인대기</option><option>체결</option></select></div>
+
+        <div class="lb">계약번호</div>
+        <div class="fd"><input type="text" class="f-mid" value="자동 채번" readonly></div>
+        <div class="lb">계약일 <span class="req">*</span></div>
+        <div class="fd"><input type="date" class="f-sm" value="2026-08-16"></div>
+
+        <div class="lb">담당 부서</div>
+        <div class="fd"><input type="text" class="f-mid" value="계약팀" readonly></div>
+        <div class="lb">작성자</div>
+        <div class="fd"><input type="text" class="f-mid" value="홍길동" readonly></div>
+      </div>
+
+      <div class="sec-t">단지 · 고객</div>
+      <div class="grid">
+        <div class="lb">단지명 <span class="req">*</span></div>
+        <div class="fd"><input type="text" class="f-mid" value="새빛 1단지"><button class="btn btn-sm">검색</button></div>
+        <div class="lb">단지 지역</div>
+        <div class="fd"><input type="text" class="f-mid" value="경기 성남시 분당구" readonly></div>
+
+        <div class="lb">세대수</div>
+        <div class="fd"><input type="text" class="f-sm" value="864" readonly></div>
+        <div class="lb">소장 / 담당자</div>
+        <div class="fd"><input type="text" class="f-mid" value="담당자 A"><button class="btn btn-sm">검색</button></div>
+
+        <div class="lb">연락처</div>
+        <div class="fd"><input type="tel" class="f-mid" value="010-2345-6789"></div>
+        <div class="lb">이메일</div>
+        <div class="fd"><input type="text" class="f-mid" placeholder="선택"></div>
+      </div>
+
+      <div class="sec-t">계약 조건</div>
+      <div class="grid">
+        <div class="lb">계약 상품 <span class="req">*</span></div>
+        <div class="fd"><select class="f-mid"><option>장수계</option><option>안전점검</option><option>기타</option></select></div>
+        <div class="lb">계약 형태 <span class="req">*</span></div>
+        <div class="fd"><select class="f-sm"><option>월납</option><option>일시납</option></select></div>
+
+        <div class="lb">계약 시작일</div>
+        <div class="fd"><input type="date" class="f-sm" value="2026-09-01"></div>
+        <div class="lb">계약 종료일</div>
+        <div class="fd"><input type="date" class="f-sm" value="2027-08-31"></div>
+
+        <div class="lb">계약금액 <span class="badge b-tbd">미확정</span></div>
+        <div class="fd col">
+          <div><input type="text" class="f-mid" value="0"><span class="hint" style="margin-left:6px;">원</span></div>
+          <span class="hint">권한 4단계(L1~L4) 기준 노출 범위 설정 예정</span>
+        </div>
+        <div class="lb">할인율 <span class="badge b-tbd">미확정</span></div>
+        <div class="fd"><input type="text" class="f-sm" value="0"><span class="hint">%</span></div>
+
+        <div class="lb">부가세</div>
+        <div class="fd"><select class="f-sm"><option>별도</option><option>포함</option></select></div>
+        <div class="lb">최종 금액</div>
+        <div class="fd"><input type="text" class="f-mid" value="0" readonly><span class="hint">자동 계산</span></div>
+
+        <div class="lb">결제 방법</div>
+        <div class="fd"><select class="f-mid"><option>계좌이체</option><option>CMS 자동이체</option><option>카드</option></select></div>
+        <div class="lb">세금계산서 발행일</div>
+        <div class="fd"><input type="date" class="f-sm"></div>
+      </div>
+
+      <div class="sec-t">유입 정보</div>
+      <div class="grid">
+        <div class="lb">유입경로</div>
+        <div class="fd"><select class="f-mid"><option>영업</option><option>인바운드</option><option>홈페이지</option><option>소개</option><option>교육</option></select></div>
+        <div class="lb">유입일</div>
+        <div class="fd"><input type="date" class="f-sm" value="2026-08-11"></div>
+
+        <div class="lb">영업 담당자 <span class="badge b-new">NEW</span></div>
+        <div class="fd" style="background:var(--new-soft);">
+          <select class="f-mid"><option>최영업</option><option>영업 담당 B</option><option>영업 담당 C</option></select>
+          <span class="hint">연결된 기회에서 자동 매핑 · 수정 가능</span>
+        </div>
+        <div class="lb">영업 유입코드 <span class="badge b-new">NEW</span></div>
+        <div class="fd col" style="background:var(--new-soft);">
+          <div><input type="text" class="f-mid" value="자동 매핑됨" readonly></div>
+          <span class="hint">유입경로 = 범주 · 유입코드 = 개별 건</span>
+        </div>
+      </div>
+
+      <div class="sec-t">기타</div>
+      <div class="grid">
+        <div class="lb">비고</div>
+        <div class="fd span3"><textarea placeholder="특이사항을 입력하세요"></textarea></div>
+        <div class="lb">첨부파일</div>
+        <div class="fd span3"><button class="btn btn-sm">파일 선택</button><span class="hint">계약서 스캔본 등</span></div>
+      </div>
+
+      <div class="formfoot">
+        <button class="btn">취소</button>
+        <button class="btn btn-pri" onclick="toast('계약이 등록되었습니다')">저장</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 장면 ④ 전환 퍼널 ===== -->
+<section class="scene" id="s4">
+  <div class="funnel">
+    <div class="fcard"><div class="k">기회</div><div class="v">128<span class="u">건</span></div></div>
+    <div class="farrow"><span class="rate">42.2%</span><span class="ln">→</span></div>
+    <div class="fcard"><div class="k">인바운드 발생</div><div class="v">54<span class="u">건</span></div></div>
+    <div class="farrow"><span class="rate">38.9%</span><span class="ln">→</span></div>
+    <div class="fcard"><div class="k">계약</div><div class="v">21<span class="u">건</span></div></div>
+  </div>
+
+  <div class="filterbar">
+    <span class="badge b-tbd">미확정</span>
+    <span class="hint">지표 정의(분모·기간 기준) 미정 — 필터는 형태만 배치했으며 동작하지 않습니다</span>
+    <span style="flex:1"></span>
+    <select disabled><option>출처별</option></select>
+    <select disabled><option>담당자별</option></select>
+    <select disabled><option>월납 여부</option></select>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- ===== 모달: 신규 단지 가등록 ===== -->
+<div class="mask" id="m-complex">
+  <div class="modal">
+    <div class="modal-hd">신규 단지 가등록<button class="x" onclick="closeModal('m-complex')">✕</button></div>
+    <div class="modal-bd">
+      <div class="mrow"><label>단지명 <span class="req">*</span></label><input type="text" class="f-full" placeholder="단지명 입력"></div>
+      <div class="mrow"><label>지역 <span class="req">*</span></label>
+        <select class="f-sm"><option>시/도 선택</option><option>서울</option><option>경기</option><option>인천</option></select>
+        <select class="f-sm"><option>군/구 선택</option></select>
+      </div>
+      <div class="mrow"><label>세대수</label><input type="text" class="f-sm" placeholder="숫자"></div>
+      <div class="mnote">가등록 단지는 상담 화면에서도 수정 가능하며, 수정 이력이 기록됩니다.</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeModal('m-complex')">취소</button>
+      <button class="btn btn-pri" onclick="closeModal('m-complex');toast('단지가 가등록되었습니다')">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 모달: 영업이력 검색 (2스텝) ===== -->
+<div class="mask" id="m-search">
+  <div class="modal wide">
+    <div class="modal-hd"><span id="searchTitle">영업이력 검색</span><button class="x" onclick="closeModal('m-search')">✕</button></div>
+    <div class="modal-bd">
+
+      <div class="step on" id="step1">
+        <div class="stepbar"><span><b>1. 이력 찾기</b></span><span>2. 연결 근거 선택</span></div>
+        <div class="mrow">
+          <label>단지명</label><input type="text" class="f-mid" placeholder="단지명">
+          <label style="width:70px;flex:0 0 70px;">담당자</label><input type="text" class="f-sm" placeholder="담당자">
+        </div>
+        <div class="mrow">
+          <label>기간</label>
+          <input type="date" class="f-sm" value="2026-07-01"><span class="hint">~</span><input type="date" class="f-sm" value="2026-08-16">
+          <button class="btn btn-sm" style="margin-left:auto;">검색</button>
+        </div>
+        <table class="res">
+          <thead><tr><th style="width:34%">단지명</th><th style="width:20%">담당자</th><th style="width:24%">최근 컨택일</th><th>채널</th></tr></thead>
+          <tbody>
+            <tr class="pick" onclick="pickRow(this,'새빛 1단지','담당자 A')"><td>새빛 1단지</td><td>최영업</td><td>2026-08-11</td><td>교육</td></tr>
+            <tr class="pick" onclick="pickRow(this,'푸른숲 아파트','담당자 B')"><td>푸른숲 아파트</td><td>영업 담당 B</td><td>2026-08-04</td><td>발굴</td></tr>
+            <tr class="pick" onclick="pickRow(this,'행복마을 2단지','담당자 C')"><td>행복마을 2단지</td><td>영업 담당 C</td><td>2026-07-22</td><td>소개</td></tr>
+          </tbody>
+        </table>
+        <div class="mnote">행을 선택하면 연결 근거를 고르는 단계로 넘어갑니다.</div>
+      </div>
+
+      <div class="step" id="step2">
+        <div class="stepbar"><span>1. 이력 찾기</span><span><b>2. 연결 근거 선택</b></span></div>
+        <div class="mnote" id="pickedInfo" style="margin:0 0 10px;"></div>
+        <div style="font-size:12.5px;font-weight:600;color:#3C4855;">이 인바운드를 해당 영업이력에 연결하는 근거를 선택하세요.</div>
+        <div class="radios">
+          <label><input type="radio" name="ev" value="고객 언급" checked> 고객 언급 — 통화 중 영업 방문·상담을 언급함</label>
+          <label><input type="radio" name="ev" value="단지 일치"> 단지 일치 — 문의 단지가 진행중 기회의 단지와 동일</label>
+          <label><input type="radio" name="ev" value="담당자 확인"> 담당자 확인 — 영업 담당자에게 직접 확인함</label>
+        </div>
+        <div class="mnote">잘못 연결하면 성과가 다른 담당자에게 집계됩니다. 연결 근거와 해제·재연결 이력이 함께 기록됩니다.</div>
+      </div>
+
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="backStep()" id="btnBack" style="display:none;">이전</button>
+      <button class="btn" onclick="closeModal('m-search')">취소</button>
+      <button class="btn btn-pri" onclick="confirmLink()" id="btnConfirm" disabled>확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 시나리오 탭 + 사이드바 연동 ===== */
+/* 장면별 사이드바 위치·브레드크럼 정의 */
+const SCENE_NAV = {
+  s1:{group:'g-sales',   sub:'sub-sales',   item:'n-sales-hist', crumb:['영업관리','영업이력 등록']},
+  s2:{group:null,        sub:null,          item:'n-consult',    crumb:['통합 상담','인바운드 등록']},
+  s3:{group:'g-contract',sub:'sub-contract',item:'n-contract',   crumb:['계약 관리','신규 계약 등록']},
+  s4:{group:'g-perf',    sub:'sub-perf',    item:'n-funnel',     crumb:['성과 분석','전환 퍼널']}
+};
+
+function syncNav(id){
+  const cfg = SCENE_NAV[id];
+  /* 전부 접고 비활성화 */
+  document.querySelectorAll('.nav .sub').forEach(s=>s.classList.remove('open'));
+  document.querySelectorAll('.nav .item').forEach(i=>{
+    i.classList.remove('open','active');
+    const c=i.querySelector('.caret'); if(c) c.textContent='▾';
+  });
+  document.querySelectorAll('.nav .sub a').forEach(a=>a.classList.remove('active'));
+
+  /* 해당 장면 위치만 펼치고 활성화 */
+  if(cfg.group){
+    const g=document.getElementById(cfg.group);
+    g.classList.add('open');
+    const c=g.querySelector('.caret'); if(c) c.textContent='▴';
+    document.getElementById(cfg.sub).classList.add('open');
+  }
+  document.getElementById(cfg.item).classList.add('active');
+
+  document.getElementById('crumb').innerHTML =
+    '<b>'+cfg.crumb[0]+'</b><span class="sep">/</span>'+cfg.crumb[1];
+}
+
+function goScene(id, el){
+  document.querySelectorAll('.scene').forEach(s=>s.classList.toggle('on', s.id===id));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on', b===el));
+  syncNav(id);
+  window.scrollTo({top:0});
+}
+syncNav('s1');
+
+/* ===== 토스트 ===== */
+let toastTimer=null;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('on'),2600);
+}
+
+/* ===== 모달 ===== */
+function openModal(id){document.getElementById(id).classList.add('on');}
+function closeModal(id){
+  document.getElementById(id).classList.remove('on');
+  if(id==='m-search') resetSearch();
+}
+document.querySelectorAll('.mask').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) closeModal(m.id); });
+});
+
+/* ===== 장면 ② 분기 전환 ===== */
+const NOTES={
+  A:'연락처가 이미 시스템에 있는 경우 — 상담사는 배지를 확인하고 한 번 누른다',
+  B:'미등록 번호지만 고객이 영업 접촉을 언급한 경우 — 검색해서 고른다. 타이핑은 검색어뿐',
+  C:'매칭 없음 — 상담사 화면이 현행에서 하나도 바뀌지 않는다'
+};
+function setBranch(b, el){
+  document.querySelectorAll('.branchbar button').forEach(x=>x.classList.toggle('on', x===el));
+  document.getElementById('branchNote').textContent=NOTES[b];
+  document.getElementById('matchCard').style.display   = (b==='A') ? 'flex':'none';
+  document.getElementById('searchStrip').style.display = (b==='B') ? 'flex':'none';
+  document.getElementById('unlinkStrip').style.display = 'none';
+  clearForm();
+}
+function clearForm(){
+  ['f_complex','f_person'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f_phone').value='010-2345-6789';
+  document.getElementById('f_memo').value='';
+  document.getElementById('fillZone').classList.remove('hl');
+}
+function fillForm(complex, person){
+  document.getElementById('f_complex').value=complex;
+  document.getElementById('f_person').value=person;
+  document.getElementById('f_phone').value='010-2345-6789';
+  const z=document.getElementById('fillZone');
+  z.classList.add('hl');
+  setTimeout(()=>z.classList.remove('hl'),1500);
+}
+
+/* A분기 연결 */
+function connectA(){
+  fillForm('새빛 1단지','담당자 A');
+  document.getElementById('matchCard').style.display='none';
+  document.getElementById('unlinkStrip').style.display='flex';
+  toast('영업 기회와 연결되었습니다');
+}
+
+/* B분기 검색 모달 */
+let picked=null;
+function openSearch(){ resetSearch(); openModal('m-search'); }
+function resetSearch(){
+  picked=null;
+  document.getElementById('step1').classList.add('on');
+  document.getElementById('step2').classList.remove('on');
+  document.getElementById('searchTitle').textContent='영업이력 검색';
+  document.getElementById('btnBack').style.display='none';
+  document.getElementById('btnConfirm').disabled=true;
+  document.querySelectorAll('#step1 table.res tr').forEach(r=>r.classList.remove('sel'));
+}
+function pickRow(tr, complex, person){
+  picked={complex, person};
+  document.querySelectorAll('#step1 table.res tr').forEach(r=>r.classList.remove('sel'));
+  tr.classList.add('sel');
+  document.getElementById('pickedInfo').textContent =
+    '선택한 영업이력 — ' + complex + ' · 담당 ' + tr.children[1].textContent + ' · 최근 컨택 ' + tr.children[2].textContent;
+  document.getElementById('step1').classList.remove('on');
+  document.getElementById('step2').classList.add('on');
+  document.getElementById('searchTitle').textContent='연결 근거 선택';
+  document.getElementById('btnBack').style.display='inline-block';
+  document.getElementById('btnConfirm').disabled=false;
+}
+function backStep(){
+  document.getElementById('step2').classList.remove('on');
+  document.getElementById('step1').classList.add('on');
+  document.getElementById('searchTitle').textContent='영업이력 검색';
+  document.getElementById('btnBack').style.display='none';
+  document.getElementById('btnConfirm').disabled=true;
+}
+function confirmLink(){
+  if(!picked) return;
+  const ev=document.querySelector('input[name=ev]:checked').value;
+  fillForm(picked.complex, picked.person);
+  closeModal('m-search');
+  document.getElementById('searchStrip').style.display='none';
+  document.getElementById('unlinkStrip').style.display='flex';
+  toast('영업이력이 연결되었습니다 (근거: ' + ev + ')');
+}
+function unlink(){
+  clearForm();
+  document.getElementById('unlinkStrip').style.display='none';
+  const on=document.querySelector('.branchbar button.on').id;
+  if(on==='bA') document.getElementById('matchCard').style.display='flex';
+  if(on==='bB') document.getElementById('searchStrip').style.display='flex';
+  toast('연결이 해제되었습니다 (해제 이력 기록)');
+}
+</script>
+</body>
+</html>
