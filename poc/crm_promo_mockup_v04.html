@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<!--
+  CRM 프로모션 추적 목업 — crm_promo_mockup.html
+  근거: PRD 장수계 9·10월 프로모션 추적 v0.4 (2026-08-21)
+  · v0.4 — 축 전환: 리텐션 → 신규·이탈 획득 / D+3·후속9종·월납목표 삭제
+    대상 A·B·C 재정의 / 교육전략파트 신설 / 인지경로·영업담당자명 신설 / 500세대 분기
+  · v0.3 — 계약 '의뢰' 선생성 확정 / 추출 전략을 필터 프리셋 → 엑셀 컬럼 확장으로 교체
+    라벨 정본을 계약에 고정(§4-0) / 장면 ④ 재설계 · 장면 ⑤ 신설
+  · 색 토큰: crm_sales.html 미보유 → Figma CRM Design System(fileKey I9klB2o8wDhuq9z5oMQMid)
+    추출값 사용 (brand #006d8b / text #222222 / border #e0e2e6·#c6c9d0 / radius 8·12)
+  · 단일 HTML · 인라인 CSS/JS · 스토리지 API 미사용 · 상태는 JS 메모리 변수
+  · 실명·실연락처·실이메일 0건 (전부 가공 데이터, 연락처 010-0000-0000 형식)
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM 프로모션 추적 목업 · v0.4</title>
+<style>
+:root{
+  --brand:#006d8b; --brand-2:#2e87a0; --brand-strong:#005066;
+  --brand-bg20:#f0f6f8; --brand-bg30:#e8f2f5;
+  --text:#222222; --text-2:#54575e; --text-3:#7d8187;
+  --bg:#ffffff; --page:#eef1f4; --surface-2:#f6f8f9; --surface-3:#eceff1;
+  --border:#e0e2e6; --border-strong:#c6c9d0; --divider:#d4d7dc;
+  --p0:#c0392b; --p0-bg:#fbe9e7;
+  --p1:#b3690a; --p1-bg:#fbefdd;
+  --p2:#7d8187; --p2-bg:#f0f1f4;
+  --keep:#1f7a4d; --keep-bg:#e3f3ea;
+  --tbd:#b3690a; --tbd-bg:#fff6e8; --tbd-border:#e6b877;
+  --ask:#6d4bb0; --ask-bg:#efeaf9; --ask-border:#c9b8e8;
+  --pink:#d81b60; --pink-bg:#fce4ec;
+  --r:8px; --r-lg:12px; --shadow:0 1px 3px rgba(20,30,40,.08),0 1px 2px rgba(20,30,40,.05);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:'Pretendard Variable','Pretendard',-apple-system,'Malgun Gothic','맑은 고딕',sans-serif;
+  background:var(--page);color:var(--text);font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+button{font-family:inherit;cursor:pointer;}
+h1,h2,h3,h4{margin:0;font-weight:600;}
+table{border-collapse:collapse;width:100%;}
+input,select,textarea{font-family:inherit;}
+
+/* ===== 목업 툴바 ===== */
+.mockbar{position:sticky;top:0;z-index:80;background:#1c2430;color:#fff;display:flex;align-items:center;gap:14px;padding:9px 20px;}
+.mockbar .mb-title{font-size:14px;font-weight:700;}
+.mockbar .mb-title small{font-weight:400;opacity:.75;font-size:11px;margin-left:7px;}
+.mockbar .sp{flex:1;}
+.scene-tabs{display:flex;background:rgba(255,255,255,.12);border-radius:8px;padding:3px;}
+.scene-tabs button{border:none;background:transparent;color:rgba(255,255,255,.78);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;white-space:nowrap;}
+.scene-tabs button.active{background:#fff;color:#1c2430;font-weight:700;}
+.mb-btn{border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;padding:5px 12px;border-radius:7px;font-size:12px;}
+.mb-btn:hover{background:rgba(255,255,255,.12);}
+.mb-btn .cnt{background:var(--tbd);color:#fff;border-radius:9px;font-size:9.5px;padding:0 5px;margin-left:4px;font-weight:700;}
+
+/* ===== 레이아웃 ===== */
+.app{display:grid;grid-template-columns:220px 1fr;max-width:1680px;margin:0 auto;min-height:calc(100vh - 41px);background:var(--bg);}
+.lnb{background:#fff;border-right:1px solid var(--border);padding:14px 0;}
+.lnb .logo{font-size:14px;font-weight:800;color:var(--brand);padding:4px 18px 14px;letter-spacing:-.3px;}
+.lnb-item{display:block;width:100%;text-align:left;border:none;background:transparent;padding:9px 18px;font-size:13px;color:var(--text-2);}
+.lnb-item:hover{background:var(--surface-2);}
+.lnb-item.active{background:var(--brand-bg20);color:var(--brand);font-weight:700;box-shadow:inset 3px 0 0 var(--brand);}
+.lnb-sub{display:block;width:100%;text-align:left;border:none;background:transparent;padding:7px 18px 7px 34px;font-size:12.5px;color:var(--text-3);}
+.lnb-sub.active{color:var(--brand);font-weight:700;background:var(--brand-bg20);}
+.lnb-div{height:1px;background:var(--border);margin:10px 14px;}
+.main{padding:18px 26px 70px;min-width:0;position:relative;}
+.crumb{font-size:12px;color:var(--text-3);margin-bottom:12px;}
+.crumb b{color:var(--text);font-weight:600;}
+.page-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.page-h h2{font-size:19px;}
+
+/* ===== 배지 ===== */
+.bdg{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;vertical-align:middle;white-space:nowrap;letter-spacing:-.2px;}
+.b-p0{background:var(--p0);color:#fff;}
+.b-p1{background:#fff;color:var(--p1);border:1px solid var(--p1);}
+.b-p2{background:#fff;color:var(--p2);border:1px solid var(--border-strong);}
+.b-keep{background:var(--keep-bg);color:var(--keep);border:1px solid #bfe3d0;}
+.b-tbd{background:var(--tbd-bg);color:var(--tbd);border:1px dashed var(--tbd-border);}
+.b-tbd::before{content:'⚠ ';}
+.b-ask{background:var(--ask-bg);color:var(--ask);border:1px dashed var(--ask-border);}
+.b-ask::before{content:'? ';}
+.b-ro{background:var(--surface-3);color:var(--text-3);border:1px solid var(--border-strong);}
+
+/* ===== 카드/폼 ===== */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);margin-bottom:14px;}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.card-h h3{font-size:14px;}
+.card-b{padding:14px 16px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px;}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 16px;}
+.fld{min-width:0;}
+.fld label{display:block;font-size:11.5px;color:var(--text-2);margin-bottom:5px;font-weight:500;}
+.fld label .req{color:var(--p0);}
+.ctl{width:100%;border:1px solid var(--border-strong);border-radius:var(--r);padding:7px 10px;font-size:12.5px;background:#fff;color:var(--text);min-height:32px;}
+.ctl:focus{outline:none;border-color:var(--brand);}
+.ctl[readonly],.ctl:disabled{background:var(--surface-2);color:var(--text-3);}
+textarea.ctl{min-height:64px;resize:vertical;}
+.fld.keep .ctl{border-color:var(--keep);box-shadow:0 0 0 2px var(--keep-bg);}
+.hint{font-size:10.5px;color:var(--text-3);margin-top:4px;}
+.sec-div{height:1px;background:var(--border);margin:16px 0;}
+.sec-t{font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:10px;}
+
+/* 프로모션 블록 (신규 = 붉은 블록) */
+.promo-block{border:1.5px solid var(--p0);border-radius:var(--r-lg);background:#fffafa;padding:0;margin:16px 0;}
+.promo-h{display:flex;align-items:center;gap:8px;background:var(--p0-bg);padding:9px 14px;border-bottom:1px solid #f0cdc7;border-radius:10px 10px 0 0;flex-wrap:wrap;}
+.promo-h .pt{font-size:12.5px;font-weight:700;color:#8a3025;}
+.promo-b{padding:13px 14px;}
+.promo-sub{font-size:11px;font-weight:700;color:var(--text-2);margin:12px 0 8px;padding-top:10px;border-top:1px dashed var(--border);}
+.promo-sub:first-child{margin-top:0;padding-top:0;border-top:none;}
+
+/* 자동 라벨 배지 */
+.auto-tag{display:flex;align-items:flex-start;gap:9px;background:var(--brand-bg30);border:1px solid #bfe0e6;border-radius:var(--r-lg);padding:11px 13px;margin-bottom:14px;font-size:12.5px;color:var(--brand-strong);}
+.auto-tag .ic{font-size:15px;line-height:1.2;}
+.auto-tag b{color:var(--brand);}
+
+/* 표시 전용(장면③) */
+.ro-zone{background:var(--surface-2);border:1px dashed var(--border-strong);border-radius:var(--r-lg);}
+.ro-zone .card-h{background:var(--surface-3);border-radius:11px 11px 0 0;}
+
+/* 탭 */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);padding:0 16px;background:#fff;border-radius:12px 12px 0 0;overflow-x:auto;}
+.tab{border:none;background:transparent;padding:11px 13px 9px;font-size:12.5px;color:var(--text-2);border-bottom:2px solid transparent;white-space:nowrap;font-weight:500;}
+.tab.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:700;}
+
+/* 버튼 */
+.btn{border:1px solid var(--border-strong);background:#fff;color:var(--text-2);padding:7px 13px;border-radius:var(--r);font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:5px;}
+.btn:hover{border-color:var(--brand);color:var(--brand);}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600;}
+.btn.primary:hover{background:var(--brand-strong);color:#fff;}
+.btn.ghost{border-color:transparent;background:transparent;}
+.btn.sm{padding:5px 10px;font-size:11.5px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* 테이블 */
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:auto;}
+table.data{font-size:12.5px;}
+table.data th{background:var(--surface-2);color:var(--text-2);font-weight:600;font-size:11.5px;text-align:left;padding:9px 11px;border-bottom:1px solid var(--border);white-space:nowrap;}
+table.data td{padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:middle;}
+table.data tr:last-child td{border-bottom:none;}
+table.data tbody tr:hover td{background:var(--surface-2);}
+.st{font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap;display:inline-block;}
+.st-req{color:var(--brand);background:var(--brand-bg30);}
+.st-ok{color:var(--keep);background:var(--keep-bg);}
+.st-hold{color:var(--p1);background:var(--p1-bg);}
+.st-off{color:var(--text-3);background:var(--p2-bg);}
+.st-new{color:var(--pink);background:var(--pink-bg);}
+.mono{font-family:'IBM Plex Mono',ui-monospace,'Courier New',monospace;}
+
+/* 드로어 */
+.drawer-host{position:relative;}
+.drawer{position:fixed;top:41px;right:0;bottom:0;width:560px;background:#fff;border-left:1px solid var(--border);box-shadow:-8px 0 28px rgba(0,0,0,.10);z-index:60;display:flex;flex-direction:column;}
+.drawer-h{padding:15px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.drawer-h h3{font-size:15px;}
+.drawer-b{padding:16px 18px;overflow-y:auto;flex:1;}
+.drawer-f{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface-2);}
+
+/* 확인필요 패널 */
+.ask-panel{position:fixed;top:41px;right:0;bottom:0;width:460px;background:#fff;border-left:1px solid var(--border);box-shadow:-8px 0 28px rgba(0,0,0,.14);z-index:90;transform:translateX(100%);transition:transform .2s ease;display:flex;flex-direction:column;}
+.ask-panel.show{transform:none;}
+.ask-row{border-left:3px solid var(--ask);background:var(--surface-2);border-radius:0 8px 8px 0;padding:9px 12px;margin-bottom:8px;font-size:12px;}
+.ask-row.tbd{border-left-color:var(--tbd);}
+.ask-row .ar-top{display:flex;justify-content:space-between;gap:8px;margin-bottom:3px;}
+.ask-row .ar-when{font-size:10.5px;color:var(--text-3);font-weight:700;}
+.ask-row .ar-who{font-size:10.5px;color:var(--text-3);}
+
+/* 토스트 */
+.toast-wrap{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{background:#242c36;color:#fff;padding:10px 18px;border-radius:10px;font-size:12.5px;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:520px;}
+.toast b{color:#7ecfe0;}
+
+/* 범례 */
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text-3);padding:9px 13px;background:#fff;border:1px solid var(--border);border-radius:9px;margin-bottom:14px;align-items:center;}
+.note{background:var(--brand-bg20);border:1px solid #cfe4ea;border-radius:var(--r-lg);padding:10px 14px;font-size:12px;color:var(--brand-strong);margin-bottom:14px;}
+.note.warn{background:var(--tbd-bg);border-color:var(--tbd-border);color:#8a5a1a;}
+.scene{display:none;}
+.scene.active{display:block;}
+.kv{display:flex;gap:6px;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--border);}
+.kv .k{color:var(--text-3);min-width:96px;}
+.kv:last-child{border-bottom:none;}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{border:1px solid var(--border);background:#fff;color:var(--text-2);padding:6px 13px;border-radius:20px;font-size:12px;font-weight:500;}
+.chip.active{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600;}
+.chip .n{opacity:.75;font-size:10.5px;margin-left:4px;}
+.grp-parent td{background:var(--brand-bg20)!important;font-weight:600;}
+.grp-child td{color:var(--text-2);}
+.grp-child td:first-child{padding-left:30px;position:relative;}
+.grp-child td:first-child::before{content:'└';position:absolute;left:14px;color:var(--text-3);}
+.menu-dot{border:none;background:transparent;color:var(--text-3);font-size:15px;padding:2px 6px;border-radius:5px;}
+.menu-dot:hover{background:var(--surface-3);color:var(--text);}
+
+/* ===== v0.3 추가 ===== */
+/* 모달 */
+.modal-back{position:fixed;inset:0;background:rgba(16,22,30,.46);z-index:120;display:flex;align-items:flex-start;justify-content:center;padding:56px 20px 30px;overflow-y:auto;}
+.modal{background:#fff;border-radius:14px;box-shadow:0 18px 48px rgba(0,0,0,.28);width:100%;max-width:880px;display:flex;flex-direction:column;max-height:calc(100vh - 90px);}
+.modal-h{padding:15px 20px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.modal-h h3{font-size:15px;}
+.modal-b{padding:16px 20px;overflow-y:auto;flex:1;}
+.modal-f{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface-2);border-radius:0 0 14px 14px;flex-wrap:wrap;}
+/* 컬럼 명세 그리드 */
+.col-sec{margin-bottom:16px;}
+.col-sec:last-child{margin-bottom:0;}
+.col-sec-h{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:8px;flex-wrap:wrap;}
+.col-grid{display:flex;flex-wrap:wrap;gap:5px;}
+.col{font-size:11.5px;padding:3px 9px;border-radius:5px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-3);white-space:nowrap;}
+.col.now{background:var(--surface-2);color:var(--text-3);}
+.col.a0{background:var(--p0-bg);border-color:var(--p0);color:#8a3025;font-weight:600;}
+.col.a1{background:var(--p1-bg);border-color:var(--p1);color:#8a5a1a;font-weight:600;}
+.col.a2{background:#fff;border-color:var(--border-strong);color:var(--text-2);}
+.col.miss{background:var(--p0);border-color:var(--p0);color:#fff;font-weight:700;}
+.col.miss::after{content:' ⚠ 현재 누락';font-weight:600;opacity:.92;}
+/* P2 리본 */
+.ribbon{display:flex;align-items:center;gap:10px;background:repeating-linear-gradient(135deg,#f0f1f4,#f0f1f4 12px,#e6e8ec 12px,#e6e8ec 24px);border:1px solid var(--border-strong);border-radius:var(--r-lg);padding:11px 15px;margin-bottom:14px;font-size:12.5px;color:var(--text-2);}
+.ribbon .rb-tag{background:var(--text);color:#fff;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:5px;letter-spacing:.02em;white-space:nowrap;}
+/* 접이식 */
+.fold{border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;box-shadow:var(--shadow);margin-bottom:14px;}
+.fold>summary{list-style:none;cursor:pointer;padding:13px 16px;font-size:13px;font-weight:600;color:var(--text-2);display:flex;align-items:center;gap:8px;}
+.fold>summary::-webkit-details-marker{display:none;}
+.fold>summary::before{content:'▸';color:var(--text-3);font-size:11px;}
+.fold[open]>summary::before{content:'▾';}
+.fold>summary:hover{color:var(--brand);}
+.fold .fold-b{padding:0 16px 16px;border-top:1px solid var(--border);padding-top:14px;}
+/* 목록 필터바 */
+.filterbar{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);padding:12px 16px;margin-bottom:14px;box-shadow:var(--shadow);}
+.filterbar .fld{min-width:180px;}
+.rowcnt{font-size:12px;color:var(--text-2);margin:10px 2px 0;}
+.summary-strip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--brand-bg30);border:1px solid #bfe0e6;border-radius:var(--r-lg);padding:10px 14px;font-size:12.5px;color:var(--brand-strong);margin-bottom:14px;}
+</style>
+</head>
+<body>
+
+<div class="mockbar">
+  <div class="mb-title">CRM 프로모션 추적 목업 <small>PRD v0.4 · 2026-08-21 · 신규·이탈 획득</small></div>
+  <div class="sp"></div>
+  <div class="scene-tabs" id="sceneTabs">
+    <button class="active" onclick="setScene(1)">① 인바운드 등록</button>
+    <button onclick="setScene(2)">② 계약상세정보</button>
+    <button onclick="setScene(3)">③ 사용자 상세</button>
+    <button onclick="setScene(4)">④ 계약 목록 · 다운로드</button>
+    <button onclick="setScene(5)">⑤ 방문의뢰 500세대 분기</button>
+    <button onclick="setScene(6)">⑥ 매출 집계 (월 분기)</button>
+  </div>
+  <button class="mb-btn" onclick="toggleAsk()">확인 필요<span class="cnt" id="askCnt">0</span></button>
+  <button class="mb-btn" onclick="resetAll()">↻ 리셋</button>
+</div>
+
+<div class="app">
+  <nav class="lnb" id="lnb"></nav>
+  <main class="main">
+    <div class="crumb" id="crumb"></div>
+    <div id="sceneHost"></div>
+  </main>
+</div>
+
+<div class="ask-panel" id="askPanel">
+  <div class="drawer-h"><h3>확인 필요 · 삭제 <small style="font-weight:400;font-size:11px;color:var(--text-3)">v0.4</small></h3><button class="btn ghost" onclick="toggleAsk()">✕</button></div>
+  <div class="drawer-b" id="askBody"></div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* =========================================================
+   상태 (JS 메모리) · 스토리지 API 미사용
+   ========================================================= */
+let SCENE=1, TAB2=0, TAB3=2, EXTRACT='d3';
+let PROMO_FILTER='전체', DL_OPEN=false, DEF9_OPEN=false;
+let REV_MONTH='2026-09', REV_BASIS='매출월';
+
+/* ---- §11 미확정·확인 필요 ---- */
+const ASKS=[
+ {t:'교육 DB 1,500건 유입 방식 — 엑셀 업로드 vs 폼 연동',k:'ask',s:'리드 소스',w:'교육전략파트',d:'v0.4 §07'},
+ {t:'대상 구분 A/B/C 자동 판정 가능 여부',k:'ask',s:'태깅 방식',w:'개발',d:'v0.4 §07'},
+ {t:'세대수 데이터 정합성 — 미입력 단지 처리 규칙',k:'ask',s:'500 분기의 키',w:'개발·운영',d:'v0.4 §07'},
+ {t:'인지경로 미입력 시 기본값 (필수인데 파악 불가 케이스)',k:'ask',s:'저장 차단 위험',w:'프로덕트·고지',d:'v0.4 §07'},
+ {t:'법무 — 교육 DB 발송 활용 근거',k:'ask',s:'발송 리스크',w:'법무·경영지원',d:'v0.4 §07 · 발송 전 필수'},
+ {t:'세대수가 계약 다운로드 컬럼 26개에 없다',k:'tbd',s:'추출 3종이 성립 안 함',w:'개발',d:'검토 지적 · 최우선'},
+ {t:'1인 다단지 소장의 A/B/C 판정 — 사람 기준 vs 단지 기준',k:'tbd',s:'현재 계약자 제외 규칙',w:'개발·영업',d:'검토 지적'},
+ {t:'500세대 미만 미방문 계약 모수 — 관리 화면·추출 없음',k:'tbd',s:'분기 비대칭',w:'프로덕트·고지',d:'검토 지적'},
+ {t:"계약 '의뢰' 선생성 · 라벨 정본 = 계약 (v0.3 §3·§4-0) 유지 여부",k:'ask',s:'그릇 구조',w:'프로덕트·개발',d:'검토 지적'},
+ {t:'월납 선안내 체크를 저장만 하고 측정 안 하는가',k:'ask',s:'필드 존치 근거',w:'경영·영업',d:'검토 지적'},
+ {t:'P0/P1/P2 일정과 9/1 데드라인이 v0.4에서 사라졌다',k:'tbd',s:'소급 불가 리스크',w:'프로덕트·개발',d:'검토 지적 · 최우선'},
+ {t:'A 안에서 교육 DB 출처를 어떻게 구분하나',k:'ask',s:'추출 2종 기준',w:'개발·교육전략',d:'검토 지적'},
+ {t:'영업담당자 — 매출관리 계약 내역 조회에 이미 있다 (v0.4는 신설로 표기)',k:'tbd',s:'필드 중복',w:'개발',d:'검토 지적'},
+ {t:'`등록일(계약서생성일)` = 인입 시점인가 — 월 분기 기준의 키',k:'ask',s:'추출 분기 기준',w:'개발',d:'검토 지적'},
+ {t:'매출관리 화면의 파트별 열람 권한·마스킹 (매출액·사업자번호 보유)',k:'ask',s:'권한 4단계',w:'개발·보안',d:'검토 지적'},
+];
+/* ---- v0.4에서 삭제된 것 (§01) ---- */
+const CUT=[
+ {t:'D+3 아웃바운드',x:'리텐션 목적 아님 — 획득 축과 무관'},
+ {t:'후속 대상 9종 프리셋',x:'업무용 4종만 유지'},
+ {t:'보류 재컨택 · 10월 2차 재홍보 환류',x:'이번 프로모션 범위 밖'},
+ {t:'월납 비중 개선 목표',x:'일시납·월납 구분 없이 수용 · 월납은 선안내만'},
+];
+/* ---- v0.3 회신 완료 (§11) ---- */
+const ANSWERED=[
+ {t:'캠페인 축',a:'신규·이탈 획득',x:'후속관리·리텐션에서 전환 (v0.4 §01)'},
+ {t:'발송 대상',a:'A · B · C 3구분',x:'현재 계약자는 전 구간 제외'},
+ {t:'주체',a:'교육전략 · 영업 · 고지 3파트',x:'교육전략파트 신설 — 리드 소스·발송 실행'},
+ {t:'영업 아웃바운드',a:'일반 DB 제외',x:'방문의뢰 100% + 교육 DB만 소화'},
+ {t:'인바운드 분기',a:'세대수 500',x:'이상 → 방문의뢰(영업) / 미만 → 고지 미방문 모수'},
+];
+
+/* ---- 옵션 정의 (PRD §4) ---- */
+const OPT={
+  promoLabel:['해당없음','9월 1차','10월 2차'],
+  target:['미판정','A · 신규(DB 없음)','B · 견적 이력','C · 이탈'],
+  aware:['미확인','문자·카카오','팩스','내부 채널','외부 채널','교육·제휴교육'],
+  salesOwner:['','김영업','박영업','이영업'],
+  consult:['인바운드','상담','견적 요청','견적 발송','방문의뢰','계약','보류'],
+  visitPath:['인바운드 발생','아웃바운드 전환'],
+  monthlyGuide:['선안내 O','선안내 X'],
+  submit:['승인','부결','보류','미상정'],
+  outbound:['통화 완료','부재','재통화 예정','방문 전환','종결'],
+  holdReason:['예산','입대의 일정','비교 검토','내부 확인'],
+};
+
+/* ---- 사이드바 (장면별 활성) ---- */
+const NAV=[
+  {k:'dash',t:'대시보드'},{k:'prog',t:'진행 상황 관리'},
+  {k:'contract',t:'계약 관리',sub:[{k:'contract-list',t:'계약 관리'},{k:'sample',t:'보안 샘플'}]},
+  {k:'apt',t:'단지 관리',sub:[{k:'apt-new',t:'단지 조회(신)'},{k:'apt-old',t:'단지 조회(구)'}]},
+  {k:'user',t:'사용자 관리'},{k:'counsel',t:'통합 상담'},{k:'callback',t:'CALL BACK'},
+  {k:'sales',t:'영업 관리',sub:[{k:'banner',t:'배너 관리'},{k:'oppo',t:'기회 관리'},{k:'edu',t:'교육 DB'},{k:'dig',t:'발굴 DB'}]},
+  {k:'rev',t:'매출 관리',sub:[{k:'rev-list',t:'계약 내역 조회'},{k:'tax',t:'세금계산서'},{k:'promo-ext',t:'프로모션 추출'}]},
+  {k:'perf',t:'성과 분석'},{k:'sys',t:'시스템 관리'},
+];
+const SCENE_NAV={1:{top:'counsel',sub:null},2:{top:'contract',sub:'contract-list'},3:{top:'user',sub:null},4:{top:'contract',sub:'contract-list'},5:{top:'contract',sub:'contract-list'},6:{top:'rev',sub:'rev-list'}};
+const CRUMB={
+ 1:'통합 상담 <b>›</b> 인바운드 <b>›</b> 인바운드 등록',
+ 2:'계약 관리 <b>›</b> 계약 관리 <b>›</b> 계약상세정보',
+ 3:'사용자 관리 <b>›</b> 사용자 상세',
+ 4:'계약 관리 <b>›</b> 계약 관리',
+ 5:'계약 관리 <b>›</b> 방문의뢰 <b>›</b> 500세대 분기',
+ 6:'매출 관리 <b>›</b> 계약 내역 조회',
+};
+
+/* ---- 샘플 데이터 (전부 가공) ---- */
+const SEED=()=>({
+  inbound:{ dept:'고지파트', reqType:'장기수선계획 문의', prio:'보통', dueDate:'2026-09-03',
+    phone:'010-0000-0000', callback:'010-0000-0000', apt:'○○아파트 1단지', mgr:'홍길동',
+    ask:'문자 보고 연락드렸습니다. 장기수선계획 비용이 어떻게 되나요?', reply:'',
+    status:'접수', owner:'고지파트',
+    promoLabel:'9월 1차', target:'A · 신규(DB 없음)', aware:'문자·카카오',
+    salesOwner:'김영업', households:742, monthlyGuide:'선안내 O',
+    visitReq:true, visitPath:'인바운드 발생', visitDate:'2026-09-05' },
+  contract:{ name:'○○아파트 1단지 장기수선계획 수립', phone:'010-0000-0000', state:'의뢰',
+    product:'장기수선계획', productType:'신규', partner:'-', partnerCode:'-',
+    pay:'월납', renew:'N', drawType:'보유', drawWork:'필요',
+    quoteDate:'2026-09-02', contractDate:'', endDate:'', drawArrive:'', visitSch:'2026-09-05',
+    ceo:'홍길동', corp:'○○관리단', bizNo:'000-00-00000',
+    taxEmail:'sample@example.com', taxIssue:'미발행', revMonth:'2026-09', revAmt:'', payDate:'',
+    inflow:'문자·카카오', custType:'신규',
+    promoLabel:'9월 1차', target:'A · 신규(DB 없음)', consult:'견적 발송', visitDate:'2026-09-05',
+    aware:'문자·카카오', visitReq:true, visitPath:'인바운드 발생',
+    salesOwner:'김영업', households:742, monthlyGuide:'선안내 O',
+    submitPlan:'2026-09-16', submitResultDate:'', submitResult:'미상정',
+    outbound:'', outboundDate:'', nextAction:'2026-09-08', holdReason:'',
+    discount:'', m39:false, startWork:'',
+    comment:'프로모션 문자 수신 후 인입(인지경로 문자·카카오). 742세대 → 방문의뢰 등록, 영업 이관.' },
+});
+let D=SEED();
+
+/* 사용자(소장) — 전부 가공 데이터 */
+const USERS=[
+ {id:'U-1001',name:'홍길동',phone:'010-0000-0000',aptCnt:3,active:2,promo:'9월 1차',lastContact:'2026-09-08',relApt:2},
+ {id:'U-1002',name:'임꺽정',phone:'010-0000-0000',aptCnt:1,active:1,promo:'9월 1차',lastContact:'2026-09-05',relApt:1},
+ {id:'U-1003',name:'성춘향',phone:'010-0000-0000',aptCnt:2,active:0,promo:'',lastContact:'',relApt:0},
+ {id:'U-1004',name:'이몽룡',phone:'010-0000-0000',aptCnt:1,active:1,promo:'10월 2차',lastContact:'2026-10-02',relApt:1},
+];
+const USER_SITES=[
+ {no:1,apt:'○○아파트 1단지',role:'소장',acct:'관리자',state:'정상',progress:'견적 발송'},
+ {no:2,apt:'△△마을 2단지',role:'소장',acct:'사용자',state:'정상',progress:'상담'},
+ {no:3,apt:'□□빌리지',role:'소장',acct:'사용자',state:'휴면',progress:'해당없음'},
+];
+const USER_PAST=[
+ {no:1,apt:'◇◇아파트',reg:'2024-03-11',rel:'2025-12-31',by:'시스템관리자'},
+ {no:2,apt:'○○아파트 2단지',reg:'2023-01-05',rel:'2024-03-10',by:'시스템관리자'},
+];
+const USER_INBOUND=[
+ {no:1,date:'2026-09-08 10:12',type:'장기수선계획 문의',apt:'○○아파트 1단지',promo:'9월 1차',consult:'견적 발송',next:'2026-09-11'},
+ {no:2,date:'2026-09-02 14:40',type:'비용 문의',apt:'△△마을 2단지',promo:'9월 1차',consult:'상담',next:'2026-09-09'},
+ {no:3,date:'2026-05-20 09:30',type:'일반 문의',apt:'○○아파트 1단지',promo:'',consult:'',next:''},
+];
+const CONTRACT_INBOUND=[
+ {no:1,date:'2026-09-02 09:14',type:'장기수선계획 문의',owner:'고지파트',state:'처리완료',promo:'9월 1차'},
+ {no:2,date:'2026-09-08 11:03',type:'견적 관련',owner:'영업파트',state:'접수',promo:'9월 1차'},
+];
+
+/* ---- 계약 목록 (장면 ④ · 기존 계약관리 목록 재현) ---- */
+const CONTRACT_ROWS=[
+ {no:7,name:'○○아파트 1단지 장수계 수립',apt:'○○아파트 1단지',hh:742,state:'의뢰',tgt:'A',aware:'문자·카카오',sales:'김영업',consult:'견적 발송',quote:'2026-09-02',visit:'O',cdate:'',own:'고지파트'},
+ {no:6,name:'△△마을 2단지 장수계 수립',apt:'△△마을 2단지',hh:318,state:'의뢰',tgt:'B',aware:'팩스',sales:'',consult:'상담',quote:'',visit:'X',cdate:'',own:'고지파트'},
+ {no:5,name:'▽▽아파트 장수계 수립',apt:'▽▽아파트',hh:1204,state:'의뢰',tgt:'C',aware:'문자·카카오',sales:'박영업',consult:'견적 발송',quote:'2026-09-01',visit:'O',cdate:'',own:'영업파트'},
+ {no:4,name:'◎◎타운 장수계 수립',apt:'◎◎타운',hh:560,state:'진행',tgt:'A',aware:'교육·제휴교육',sales:'김영업',consult:'방문의뢰',quote:'2026-09-04',visit:'O',cdate:'',own:'영업파트'},
+ {no:3,name:'□□빌리지 장수계 수립',apt:'□□빌리지',hh:284,state:'보류',tgt:'B',aware:'내부 채널',sales:'',consult:'보류',quote:'2026-09-03',visit:'X',cdate:'',own:'고지파트'},
+ {no:2,name:'◇◇아파트 장수계 수립',apt:'◇◇아파트',hh:905,state:'계약',tgt:'C',aware:'문자·카카오',sales:'이영업',consult:'계약',quote:'2026-09-02',visit:'O',cdate:'2026-09-14',own:'영업파트'},
+ {no:1,name:'☆☆단지 장수계 수립',apt:'☆☆단지',hh:0,state:'의뢰',tgt:'미판정',aware:'미확인',sales:'',consult:'인바운드',quote:'',visit:'X',cdate:'',own:'고지파트'},
+];
+/* ---- 매출관리 계약 내역 조회 (장면 ⑥ · 캡처 컬럼 구조) ---- */
+const REV_ROWS=[
+ {id:'9601',name:'○○아파트 1단지 장수계',prod:'아파트너스',item:'월납',biz:'123-45-*****',rmonth:'2026-09',amt:764500,cdate:'2026-09-14',edate:'2029-09-13',reg:'2026-09-02',corp:'○○아파트입주자대표회의',sales:'김영업',promo:'9월 1차',tgt:'A'},
+ {id:'9602',name:'◇◇아파트 장수계',prod:'아파트너스',item:'일시납',biz:'123-45-*****',rmonth:'2026-09',amt:12300000,cdate:'2026-09-14',edate:'2029-09-13',reg:'2026-08-31',corp:'◇◇아파트입주자대표회의',sales:'이영업',promo:'9월 1차',tgt:'C'},
+ {id:'9603',name:'▲▲마을 3단지 장수계',prod:'이지스',item:'월납 재계약',biz:'123-45-*****',rmonth:'2026-09',amt:980000,cdate:'2026-09-22',edate:'2029-09-21',reg:'2026-07-18',corp:'▲▲마을입주자대표회의',sales:'박영업',promo:'해당없음',tgt:'—'},
+ {id:'9604',name:'◎◎타운 장수계',prod:'아파트너스',item:'월납선납 재계약',biz:'123-45-*****',rmonth:'2026-10',amt:1450000,cdate:'2026-10-06',edate:'2029-10-05',reg:'2026-09-04',corp:'◎◎타운입주자대표회의',sales:'김영업',promo:'9월 1차',tgt:'A'},
+ {id:'9605',name:'▽▽아파트 장수계',prod:'아파트너스',item:'일시납',biz:'123-45-*****',rmonth:'2026-10',amt:18700000,cdate:'2026-10-12',edate:'2029-10-11',reg:'2026-09-01',corp:'▽▽아파트입주자대표회의',sales:'박영업',promo:'9월 1차',tgt:'C'},
+ {id:'9606',name:'☆☆단지 장수계',prod:'더아파트',item:'월납',biz:'123-45-*****',rmonth:'2026-10',amt:640000,cdate:'2026-10-19',edate:'2029-10-18',reg:'2026-10-02',corp:'-',sales:'이영업',promo:'10월 2차',tgt:'B'},
+ {id:'9607',name:'◈◈리버뷰 장수계',prod:'이지스',item:'기타',biz:'123-45-*****',rmonth:'2026-10',amt:2100000,cdate:'2026-10-23',edate:'2029-10-22',reg:'2026-06-11',corp:'◈◈리버뷰입주자대표회의',sales:'박영업',promo:'해당없음',tgt:'—'},
+];
+
+/* ---- 방문의뢰 500세대 분기 (장면 ⑤) ---- */
+const VISIT_ROWS=[
+ {apt:'▽▽아파트',hh:1204,person:'임꺽정',reg:'2026-09-01',state:'미소화',sales:'박영업',aware:'문자·카카오',tgt:'C'},
+ {apt:'◎◎타운',hh:560,person:'이몽룡',reg:'2026-09-04',state:'방문 완료',sales:'김영업',aware:'교육·제휴교육',tgt:'A'},
+ {apt:'○○아파트 1단지',hh:742,person:'홍길동',reg:'2026-09-02',state:'미소화',sales:'김영업',aware:'문자·카카오',tgt:'A'},
+ {apt:'◇◇아파트',hh:905,person:'성춘향',reg:'2026-08-31',state:'계약 완료',sales:'이영업',aware:'문자·카카오',tgt:'C'},
+];
+const NOVISIT_ROWS=[
+ {apt:'△△마을 2단지',hh:318,person:'임꺽정',consult:'상담',quote:'',own:'고지파트'},
+ {apt:'□□빌리지',hh:284,person:'성춘향',consult:'보류',quote:'2026-09-03',own:'고지파트'},
+];
+/* ---- 엑셀 다운로드 컬럼 명세 (§7-2) ---- */
+const DL_NOW=['계약명','계약상태','계약구분','상품명','상품구분','매출월','매출액','계약일','계약종료일','고객구분','제휴사','유입경로','연락처','방문일정','등록일(계약서생성일)','단지정보(지역)','단지정보(시|구)','담당자1','담당자2','담당자3','연락처1','연락처2','연락처3','이메일1','이메일2','이메일3'];
+const DL_ADD_P0=[{t:'세대수',miss:true},{t:'견적서 발송일',miss:true},{t:'대상 구분(A/B/C)'},{t:'인지경로'},{t:'영업담당자명'},{t:'방문의뢰 여부'},{t:'방문의뢰일'}];
+const DL_ADD_P1=['상담 상태값','프로모션 라벨','운영·적산 이관 여부'];
+const DL_ADD_P2=['할인 구분','실무 착수일'];
+
+/* ---- 추출 업무용 4종 (PRD v0.4 §05) ---- */
+const EXTRACTS=[
+ {k:'visit',t:'방문의뢰 처리 대상',own:'영업',use:'고지가 등록한 500세대↑ 방문의뢰 소화용',need:'방문의뢰 여부, 세대수, 방문일정',ok:'miss'},
+ {k:'edu',t:'교육 DB 아웃바운드 대상',own:'영업',use:'교육전략 이관분. 세대수·지역·마지막 조정일 정렬',need:'세대수, 지역, 마지막 조정일, 인지경로',ok:'miss'},
+ {k:'nodrop',t:'500세대 이상 방문의뢰 누락 대상',own:'영업·고지',use:'등록됐으나 미소화된 건 점검',need:'세대수, 방문의뢰 여부, 방문일정',ok:'miss'},
+ {k:'ops',t:'계약 완료 후 운영·적산 이관 대상',own:'운영',use:'계약 성사 건의 후속 이관',need:'계약상태, 운영·적산 이관 여부',ok:'partial'},
+];
+
+const SUBMIT_ROWS=[
+ {apt:'○○아파트 1단지',person:'홍길동',quote:'2026-09-02',plan:'2026-09-16',result:'미입력',owner:'고지파트'},
+ {apt:'▽▽아파트',person:'임꺽정',quote:'2026-09-01',plan:'2026-09-15',result:'미입력',owner:'고지파트'},
+ {apt:'◎◎타운',person:'이몽룡',quote:'2026-09-04',plan:'2026-09-18',result:'미입력',owner:'고지파트'},
+];
+const PEOPLE_ROWS=[
+ {person:'홍길동',phone:'010-0000-0000',sites:'○○아파트 1단지 외 2',promo:'9월 1차',consult:'견적 발송',last:'2026-09-08',cnt:2},
+ {person:'임꺽정',phone:'010-0000-0000',sites:'▽▽아파트',promo:'9월 1차',consult:'방문의뢰',last:'2026-09-05',cnt:1},
+ {person:'이몽룡',phone:'010-0000-0000',sites:'◎◎타운',promo:'10월 2차',consult:'상담',last:'2026-10-02',cnt:1},
+];
+
+/* =========================================================
+   헬퍼
+   ========================================================= */
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function bd(kind){
+  if(kind==='P0')return '<span class="bdg b-p0">P0</span>';
+  if(kind==='P1')return '<span class="bdg b-p1">P1</span>';
+  if(kind==='P2')return '<span class="bdg b-p2">P2</span>';
+  if(kind==='keep')return '<span class="bdg b-keep">기존 필드</span>';
+  if(kind==='ro')return '<span class="bdg b-ro">표시 전용</span>';
+  return '';
+}
+function tbd(t){return `<span class="bdg b-tbd">${esc(t||'미확정')}</span>`;}
+function ask(t){return `<span class="bdg b-ask">${esc(t||'확인 필요')}</span>`;}
+/* 입력 필드 */
+function f(label,html,opt){
+  opt=opt||{};
+  const badges=[opt.p?bd(opt.p):'',opt.keep?bd('keep'):'',opt.tbd?tbd(opt.tbd):'',opt.ask?ask(opt.ask):''].filter(Boolean).join(' ');
+  return `<div class="fld ${opt.keep?'keep':''}"><label>${opt.req?'<span class="req">*</span> ':''}${esc(label)} ${badges}</label>${html}${opt.hint?`<div class="hint">${opt.hint}</div>`:''}</div>`;
+}
+function inp(val,ph,attr){return `<input class="ctl" value="${esc(val||'')}" placeholder="${esc(ph||'')}" ${attr||''}>`;}
+function sel(list,val,attr){return `<select class="ctl" ${attr||''}>${list.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`;}
+function dat(val,attr){return `<input type="date" class="ctl" value="${esc(val||'')}" ${attr||''}>`;}
+function ta(val,ph,attr){return `<textarea class="ctl" placeholder="${esc(ph||'')}" ${attr||''}>${esc(val||'')}</textarea>`;}
+function ro(val){return `<div class="ctl" style="background:var(--surface-2);color:var(--text-2)">${esc(val||'—')}</div>`;}
+
+function toast(h){const w=document.getElementById('toastWrap');const e=document.createElement('div');e.className='toast';e.innerHTML=h;w.appendChild(e);setTimeout(()=>{e.style.opacity='0';e.style.transition='opacity .3s';setTimeout(()=>e.remove(),300);},2600);}
+function toggleAsk(){document.getElementById('askPanel').classList.toggle('show');}
+function resetAll(){D=SEED();TAB2=0;TAB3=2;EXTRACT='d3';PROMO_FILTER='전체';DL_OPEN=false;DEF9_OPEN=false;REV_MONTH='2026-09';REV_BASIS='매출월';render();toast('초기 상태로 리셋되었습니다');}
+
+/* =========================================================
+   사이드바 · 브레드크럼
+   ========================================================= */
+function renderNav(){
+  const cur=SCENE_NAV[SCENE];
+  let h='<div class="logo">APTNERS CRM</div>';
+  NAV.forEach(n=>{
+    h+=`<button class="lnb-item ${n.k===cur.top?'active':''}" onclick="navClick()">${esc(n.t)}</button>`;
+    if(n.sub&&n.k===cur.top){ n.sub.forEach(s=>{ h+=`<button class="lnb-sub ${s.k===cur.sub?'active':''}" onclick="navClick()">· ${esc(s.t)}</button>`; }); }
+    if(n.k==='callback'||n.k==='perf') h+='<div class="lnb-div"></div>';
+  });
+  document.getElementById('lnb').innerHTML=h;
+  document.getElementById('crumb').innerHTML=CRUMB[SCENE];
+}
+function navClick(){toast('목업 — 사이드바는 장면 탭에 따라 자동 동기화됩니다');}
+function setScene(n){SCENE=n;document.querySelectorAll('#sceneTabs button').forEach((b,i)=>b.classList.toggle('active',i===n-1));render();}
+
+/* =========================================================
+   §11 패널
+   ========================================================= */
+function renderAsk(){
+  document.getElementById('askCnt').textContent=ASKS.length;
+  document.getElementById('askBody').innerHTML=
+   `<div class="note">PRD v0.4 §07 + <b>이번 검토에서 나온 지적</b>입니다. 각 항목은 해당 화면에도 <span class="bdg b-ask">확인 필요</span> / <span class="bdg b-tbd">미확정</span> 배지로 붙어 있습니다.</div>`+
+   `<div style="font-size:11.5px;font-weight:700;color:var(--keep);margin:0 0 8px">✓ v0.4 확정 ${ANSWERED.length}건</div>`+
+   ANSWERED.map(a=>`<div class="ask-row" style="border-left-color:var(--keep);background:var(--keep-bg)"><div class="ar-top"><b>${esc(a.t)}</b><span class="ar-when" style="color:var(--keep)">${esc(a.a)}</span></div><div class="ar-who">${esc(a.x)}</div></div>`).join('')+
+   `<div style="font-size:11.5px;font-weight:700;color:var(--text);margin:16px 0 8px">✕ v0.4에서 삭제 ${CUT.length}건</div>`+
+   CUT.map(c=>`<div class="ask-row" style="border-left-color:var(--text-3);background:var(--surface-3)"><div class="ar-top"><b style="text-decoration:line-through">${esc(c.t)}</b></div><div class="ar-who">${esc(c.x)}</div></div>`).join('')+
+   `<div style="font-size:11.5px;font-weight:700;color:var(--ask);margin:16px 0 8px">확인 필요 ${ASKS.length}건 <span style="font-weight:400;color:var(--text-3)">(§07 5건 + 검토 지적 7건)</span></div>`+
+   ASKS.map(a=>`<div class="ask-row ${a.k==='tbd'?'tbd':''}"><div class="ar-top"><b>${esc(a.t)}</b><span class="ar-when">${esc(a.d)}</span></div><div class="ar-who">${esc(a.s)} · 해소 주체 ${esc(a.w)}</div></div>`).join('');
+}
+
+/* =========================================================
+   장면 ① 인바운드 등록 (캡처1 · 우측 드로어)
+   ========================================================= */
+function scene1(){
+  const i=D.inbound;
+  const list=`
+  <div class="page-h"><h2>인바운드</h2><button class="btn primary" onclick="toast('드로어가 이미 열려 있습니다 (목업)')">+ 인바운드 등록</button></div>
+  <div class="note">장면 ① — v0.4 §06에 따라 <b>인지경로(필수) · 영업담당자명 · 대상 구분(A/B/C) · 세대수 · 월납 선안내</b>를 인바운드 등록 폼에 둡니다. 세대수를 넣는 순간 <b>500 분기</b>가 화면에서 갈립니다.</div>
+  <div class="tbl-wrap" style="margin-right:576px">
+    <table class="data"><thead><tr><th>No</th><th>등록일시</th><th>요청유형</th><th>단지명</th><th>연락처</th><th>프로모션</th><th>상태</th></tr></thead>
+    <tbody>
+      <tr><td>3</td><td class="mono">2026-09-08 11:03</td><td>견적 관련</td><td>○○아파트 1단지</td><td class="mono">010-0000-0000</td><td><span class="st st-new">9월 1차</span></td><td><span class="st st-req">접수</span></td></tr>
+      <tr><td>2</td><td class="mono">2026-09-05 15:22</td><td>방문 요청</td><td>▽▽아파트</td><td class="mono">010-0000-0000</td><td><span class="st st-new">9월 1차</span></td><td><span class="st st-ok">처리완료</span></td></tr>
+      <tr><td>1</td><td class="mono">2026-09-02 09:14</td><td>장기수선계획 문의</td><td>△△마을 2단지</td><td class="mono">010-0000-0000</td><td><span class="st st-new">9월 1차</span></td><td><span class="st st-ok">처리완료</span></td></tr>
+    </tbody></table>
+  </div>`;
+
+  const drawer=`
+  <div class="drawer">
+    <div class="drawer-h"><h3>인바운드 등록</h3><button class="btn ghost" onclick="toast('목업 — 드로어는 항상 열린 상태로 고정')">✕</button></div>
+    <div class="drawer-b">
+
+      <div class="auto-tag">
+        <span class="ic">🎯</span>
+        <div>
+          <b>이 번호는 9월 1차 발송 대상입니다 · 대상 구분 <span style="color:var(--pink)">A · 신규(DB 없음)</span> · 소장 3개 단지 담당</b><br>
+          <span style="font-size:11.5px">사용자관리 연락처로 계약·견적 이력을 조회해 <b>A/B/C가 자동 판정</b>됩니다.
+          ${ask('A/B/C 자동 판정 가능 여부 — v0.4 §07')} ${ask('1인 다단지 소장은 사람 기준인가 단지 기준인가')}</span>
+        </div>
+      </div>
+
+      <div class="grid2">
+        ${f('인바운드 처리 부서',sel(['고지파트','영업파트','운영·적산','교육전략·마케팅'],i.dept),{req:1})}
+        ${f('요청유형',sel(['장기수선계획 문의','비용 문의','견적 관련','방문 요청','일반 문의'],i.reqType),{req:1})}
+        ${f('우선순위',sel(['긴급','보통','낮음'],i.prio),{req:1})}
+        ${f('처리예정일',dat(i.dueDate))}
+        ${f('연락처',inp(i.phone,'010-0000-0000'))}
+        ${f('Call Back 번호',inp(i.callback,'010-0000-0000'))}
+      </div>
+      <div class="sec-div"></div>
+      <div class="grid2">
+        ${f('단지명',inp(i.apt,'단지 검색'))}
+        ${f('소장/담당자',inp(i.mgr,'사용자 검색'))}
+      </div>
+      <div class="sec-div"></div>
+      ${f('문의 내용',ta(i.ask,'문의 내용을 입력하세요'))}
+      ${f('처리 내용',ta(i.reply,'처리 내용을 입력하세요'))}
+      <div class="sec-div"></div>
+      <div class="sec-t">수정 정보</div>
+      <div class="grid2">
+        ${f('상태',sel(['접수','처리중','처리완료','보류'],i.status))}
+        ${f('담당자',inp(i.owner,''))}
+      </div>
+
+      <div class="promo-block">
+        <div class="promo-h"><span class="pt">프로모션 추적 — 획득 축 (v0.4)</span> ${bd('P0')}
+          <span style="font-size:11px;color:#8a3025">신규·이탈 획득. 후속관리·리텐션 아님</span></div>
+        <div class="promo-b">
+          <div class="grid2">
+            ${f('인지경로',sel(OPT.aware,i.aware),{req:1,p:'P0',ask:'미입력 시 기본값',hint:'<b>영업 귀속 · 필수.</b> 접수채널(대표전화)과 <b>별도 축</b> — 무엇을 보고 연락했는가'})}
+            ${f('접수채널',ro('대표전화'),{keep:1,hint:'기존 값 연속성 유지 · 어디로 왔는가'})}
+            ${f('영업담당자명',sel(OPT.salesOwner,i.salesOwner),{p:'P0',hint:'누가 가져온 건인지 추적 · 교육 DB→영업 이관 구조에서 필수'})}
+            ${f('대상 구분 (A/B/C)',sel(OPT.target,i.target),{p:'P0',hint:'A 신규 · B 견적이력 · C 이탈 · <b>현재 계약자 제외</b>'})}
+            ${f('프로모션 라벨',sel(OPT.promoLabel,i.promoLabel),{p:'P0',hint:'9월 1차 / 10월 2차'})}
+            ${f('월납 선안내',sel(OPT.monthlyGuide,i.monthlyGuide),{p:'P0',ask:'저장만 하고 측정 안 하는가',hint:'v0.4 — 월납 <b>목표는 삭제</b>. 일시납·월납 구분 없이 수용, 선안내 여부만'})}
+          </div>
+
+          <div class="promo-sub">세대수 500 분기 — 프로세스의 핵심 갈림</div>
+          <div class="grid2">
+            ${f('세대수',ro(i.households+'세대'),{keep:1,ask:'미입력 단지 처리 규칙',hint:'단지마스터에서 조회 · <b>500 분기의 키</b>'})}
+            ${f('처리 분기',ro(i.households>=500?'500세대 이상 → 방문의뢰 등록 (영업 소화)':'500세대 미만 → 고지파트 미방문 계약 모수'),{p:'P0'})}
+          </div>
+          <div class="grid2" style="margin-top:12px">
+            ${f('방문의뢰 여부',sel(['O','X'],i.visitReq?'O':'X'),{p:'P0',hint:'500세대 이상이면 자동 O 제안'})}
+            ${f('방문의뢰일',dat(i.visitDate),{p:'P0',ask:'`방문일정`과의 관계'})}
+          </div>
+          <div class="note warn" style="margin:12px 0 0;font-size:11.5px">
+            <b>500세대 미만은 갈 곳이 없다.</b> v0.4는 "고지파트 미방문 계약 모수 관리"라고만 적었을 뿐,
+            관리 화면도 추출 리스트 4종에도 없다. 분기가 <b>한쪽만 구현</b>된 상태다.
+            ${ask('500세대 미만 모수 — 관리 화면·추출 없음')}
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="drawer-f"><button class="btn" onclick="toast('취소 (목업)')">취소</button><button class="btn primary" onclick="toast('인바운드가 저장되었습니다 · 프로모션 라벨 <b>9월 1차</b> 스탬프')">저장</button></div>
+  </div>`;
+  return `<div class="drawer-host">${list}${drawer}</div>`;
+}
+
+/* =========================================================
+   장면 ② 계약상세정보 (캡처2 · 3열)
+   ========================================================= */
+const TABS2=['계약상세정보','단지리스트','인바운드 이력','장수계 작업현황','변경내역'];
+function scene2(){
+  const c=D.contract;
+  const tabs=`<div class="tabs">${TABS2.map((t,i)=>`<button class="tab ${i===TAB2?'active':''}" onclick="setTab2(${i})">${t}</button>`).join('')}</div>`;
+  if(TAB2!==0){
+    return `<div class="page-h"><h2>계약상세정보</h2></div>${tabs}
+    <div class="card" style="border-radius:0 0 12px 12px;margin-top:0"><div class="card-b"><div class="note">목업 범위 밖 탭입니다. <b>계약상세정보</b> 탭에서 프로모션 블록을 확인하세요.</div></div></div>`;
+  }
+  return `
+  <div class="page-h"><h2>계약상세정보</h2>
+    <div style="display:flex;gap:8px"><button class="btn" onclick="toast('복사/재계약 (목업)')">복사/재계약</button><button class="btn primary" onclick="toast('편집 모드 (목업)')">편집</button></div>
+  </div>
+  <div class="note">장면 ② — v0.4 §06: <b>영업담당자명 · 인지경로 매핑 · 대상 구분 표시</b>를 얹고 <b>월납 목표 관련 표기는 제거</b>했습니다. 상정·아웃바운드 블록(P1)은 D+3 삭제와 함께 <b>후속관리 성격이 사라졌으므로</b> 존치 여부 확인이 필요합니다.</div>
+  ${tabs}
+  <div class="card" style="border-radius:0 0 12px 12px;margin-top:0">
+    <div class="card-b">
+      <div class="grid3">
+        ${f('계약명',inp(c.name),{req:1})}
+        ${f('연락처',inp(c.phone),{req:1})}
+        ${f('계약상태',sel(['의뢰','계약','진행','완료(만료)','파기','보류'],c.state),{req:1,keep:1,hint:'<b>v0.3 확정</b> — 계약 체결 전 <b>의뢰</b>로 선생성된다. 프로모션 파이프라인의 그릇 (§3)'})}
+        ${f('상품명',inp(c.product))}
+        ${f('상품 구분',inp(c.productType))}
+        ${f('제휴사',inp(c.partner))}
+        ${f('제휴사 CODE',inp(c.partnerCode))}
+        ${f('납부 방식',sel(['월납','일시납'],c.pay),{keep:1,hint:'7-6 «일시납/월납» = 이 필드'})}
+        ${f('재계약 여부',sel(['N','Y'],c.renew))}
+        ${f('도면구분',inp(c.drawType))}
+        ${f('도면작업',inp(c.drawWork))}
+        ${f('견적서 발송일',dat(c.quoteDate),{keep:1,hint:'v0.3에서 발견된 <b>다운로드 컬럼 누락</b>이 v0.4에도 그대로'})}
+        ${f('계약일',dat(c.contractDate),{keep:1})}
+        ${f('계약종료일',dat(c.endDate))}
+        ${f('도면도착일',dat(c.drawArrive))}
+        ${f('방문일정',dat(c.visitSch),{keep:1,ask:'방문의뢰일 vs 예정일',hint:'의미 불명 — 방문의뢰일이면 신규 필드 불필요'})}
+        ${f('대표자명',inp(c.ceo))}
+        ${f('법인명',inp(c.corp))}
+        ${f('사업자번호',inp(c.bizNo))}
+        ${f('세금계산서 이메일',inp(c.taxEmail))}
+        ${f('세금계산서 발행',sel(['미발행','발행'],c.taxIssue))}
+        ${f('매출월',inp(c.revMonth))}
+        ${f('매출액',inp(c.revAmt))}
+        ${f('입금일',dat(c.payDate))}
+        ${f('유입경로',sel(OPT.aware,c.inflow),{keep:1,ask:'인지 경로와 통합?',hint:'§5-1 — 옵션 확장으로 흡수 권고'})}
+        ${f('고객 구분',sel(['신규','기존-이동'],c.custType),{keep:1,hint:'§5-3 — 대상 구분과 축이 달라 <b>별도 유지</b>'})}
+      </div>
+
+      <div class="promo-block">
+        <div class="promo-h"><span class="pt">프로모션 · 추적</span> <span style="font-size:11px;color:#8a3025">§3 안 A(가설 참) 기준 배치 — 블록 단위로 이동 가능</span></div>
+        <div class="promo-b">
+          <div class="promo-sub">P0 — 9/1</div>
+          <div class="grid3">
+            ${f('프로모션 라벨',sel(OPT.promoLabel,c.promoLabel),{p:'P0'})}
+            ${f('대상 구분',sel(OPT.target,c.target),{p:'P0'})}
+            ${f('상담 상태값',sel(OPT.consult,c.consult),{p:'P0',ask:'계약상태 옵션 확장 시 기존 리포트 영향'})}
+            ${f('인지경로',sel(OPT.aware,c.aware),{p:'P0',hint:'인바운드에서 <b>매핑</b> · 영업 귀속'})}
+            ${f('영업담당자명',sel(OPT.salesOwner,c.salesOwner),{p:'P0',hint:'v0.4 신설 — 누가 가져온 건인지'})}
+            ${f('대상 구분 (A/B/C)',sel(OPT.target,c.target),{p:'P0'})}
+            ${f('세대수',ro(c.households+'세대'),{keep:1,hint:'500 분기의 키 — <b>다운로드 컬럼에는 없다</b>'})}
+            ${f('월납 선안내',sel(OPT.monthlyGuide,c.monthlyGuide),{p:'P0',hint:'v0.4 — 월납 <b>목표 삭제</b>. 선안내 여부만'})}
+            ${f('방문의뢰 여부',sel(['O','X'],c.visitReq?'O':'X'),{p:'P0'})}
+            ${f('방문의뢰일',dat(c.visitDate),{p:'P0'})}
+          <div class="promo-sub" style="color:var(--p0)">P1 — 존치 여부 확인 필요 (v0.4에서 후속관리 축이 삭제됨)</div>
+          <div class="note warn" style="margin:0 0 10px;font-size:11.5px">
+            v0.4 §01이 <b>D+3 아웃바운드 · 보류 재컨택 · 10월 2차 재홍보</b>를 삭제했다.
+            아래 필드는 그 후속관리 흐름을 재는 값이라 <b>같이 죽는지, 상정만 남기는지</b>가 문서에 없다.
+            상정은 계약 성사의 관문이라 획득 축에서도 필요해 보이는데, 아웃바운드 결과·다음 액션일·보류 사유는 근거가 사라졌다.
+            ${ask('P1 블록 존치 범위 — 프로덕트·영업')}
+          </div>
+          <div class="grid3">
+            ${f('상정 예정일',dat(c.submitPlan),{p:'P1'})}
+            ${f('상정 결과일',dat(c.submitResultDate),{p:'P1'})}
+            ${f('상정 결과',sel(OPT.submit,c.submitResult),{p:'P1'})}
+            ${f('아웃바운드 결과',sel([''].concat(OPT.outbound),c.outbound),{p:'P1',tbd:'D+3 삭제로 근거 소멸'})}
+            ${f('아웃바운드 실행일',dat(c.outboundDate),{p:'P1',tbd:'D+3 삭제로 근거 소멸'})}
+            ${f('다음 액션일',dat(c.nextAction),{p:'P1',tbd:'후속관리 삭제'})}
+            ${f('보류 사유',sel([''].concat(OPT.holdReason),c.holdReason),{p:'P1',tbd:'보류 재컨택 삭제'})}
+          </div>
+          <div class="promo-sub">P2 — 9/22</div>
+          <div class="grid3">
+            ${f('할인 구분',sel(['','정책 미수령'],c.discount,'disabled'),{p:'P2',tbd:'할인율·금액 정책 미수령'})}
+            ${f('39개월 계약 여부',sel(['X','O'],c.m39?'O':'X','disabled'),{p:'P2',ask:'"39개월" 정의 근거',hint:'계약 시작·종료일로 파생 가능한지 확인 후 필드 생성 결정'})}
+            ${f('실무 착수일',dat(c.startWork,'disabled'),{p:'P2',ask:'입력 주체 미정'})}
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-div"></div>
+      ${f('작성 및 수정 정보(자동반영)',ro('등록 2026-09-02 · 최종수정 2026-09-08 · 고지파트'))}
+      ${f('코멘트',ta(c.comment))}
+
+      <div class="sec-div"></div>
+      <div class="sec-t">인바운드 이력 <span style="font-weight:400;color:var(--text-3)">— 하나의 인바운드가 사람에도 계약에도 걸린다 (§3)</span></div>
+      <div class="tbl-wrap">
+        <table class="data"><thead><tr><th>No</th><th>등록일시</th><th>요청유형</th><th>담당</th><th>상태</th><th>프로모션 라벨 ${bd('P0')}</th></tr></thead>
+        <tbody>${CONTRACT_INBOUND.map(r=>`<tr><td>${r.no}</td><td class="mono">${r.date}</td><td>${r.type}</td><td>${r.owner}</td><td><span class="st ${r.state==='접수'?'st-req':'st-ok'}">${r.state}</span></td><td><span class="st st-new">${r.promo}</span></td></tr>`).join('')}</tbody></table>
+      </div>
+    </div>
+  </div>`;
+}
+function setTab2(i){TAB2=i;render();}
+
+/* =========================================================
+   장면 ③ 사용자 상세 (캡처4) — 신규 입력 필드 0개, 전부 표시 전용
+   ========================================================= */
+const TABS3=['사용자정보','단지/계약정보','인바운드 이력','변경내역'];
+function scene3(){
+  const u=USERS[0];
+  const userList=USERS.map((x,i)=>`
+    <button class="lnb-item ${i===0?'active':''}" style="border-bottom:1px solid var(--border);padding:11px 14px" onclick="toast('목업 — 첫 번째 사용자만 상세 제공')">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <b style="font-size:13px;color:var(--text)">${esc(x.name)}</b>
+        ${x.promo?`<span class="st st-new" style="font-size:10px;padding:1px 7px">${esc(x.promo)}</span>`:''}
+      </div>
+      <div class="mono" style="font-size:11px;color:var(--text-3);margin-top:2px">${esc(x.phone)}</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:2px">단지 {${x.aptCnt}}개 | 진행중 {${x.active}}건</div>
+    </button>`).join('');
+
+  const tabs=`<div class="tabs">${TABS3.map((t,i)=>`<button class="tab ${i===TAB3?'active':''}" onclick="setTab3(${i})">${t}</button>`).join('')}</div>`;
+
+  let body='';
+  if(TAB3===2){
+    body=`
+    <div class="card-b">
+      <div class="sec-t">인바운드 이력 <span class="bdg b-ro">표시 전용</span> <span style="font-weight:400;color:var(--text-3)">— 프로모션 컬럼 3종만 추가</span></div>
+      <div class="tbl-wrap">
+        <table class="data"><thead><tr><th>No</th><th>등록일시</th><th>요청유형</th><th>단지명</th>
+          <th style="background:var(--p0-bg);color:#8a3025">프로모션 라벨 ${bd('P1')}</th>
+          <th style="background:var(--p0-bg);color:#8a3025">상담 상태값 ${bd('P1')}</th>
+          <th style="background:var(--p0-bg);color:#8a3025">다음 액션일 ${bd('P1')}</th></tr></thead>
+        <tbody>${USER_INBOUND.map(r=>`<tr><td>${r.no}</td><td class="mono">${r.date}</td><td>${r.type}</td><td>${r.apt}</td>
+          <td>${r.promo?`<span class="st st-new">${r.promo}</span>`:'<span style="color:var(--text-3)">—</span>'}</td>
+          <td>${r.consult?`<span class="st st-req">${r.consult}</span>`:'<span style="color:var(--text-3)">—</span>'}</td>
+          <td class="mono">${r.next||'—'}</td></tr>`).join('')}</tbody></table>
+      </div>
+      <div class="hint" style="margin-top:8px">값의 출처는 인바운드·계약의 프로모션 라벨 <b>역산</b>. 사용자관리에는 저장하지 않는다.
+        ${ask('인바운드 이력 연결 기준 — 연락처 vs 사용자ID')}</div>
+    </div>`;
+  } else if(TAB3===0){
+    body=`
+    <div class="card-b">
+      <div class="sec-t">사용자 상세정보 <span class="bdg b-ro">표시 전용 · 신규 입력 필드 0개</span></div>
+      <div class="grid3">
+        ${f('사용자명',ro(u.name))}${f('아이디',ro('user1001  (변경)'))}${f('비밀번호',ro('••••••••  (초기화)'))}
+        ${f('연락처',ro(u.phone))}${f('이메일',ro('sample@example.com  (변경)'))}${f('가입일',ro('2023-01-05'))}
+        ${f('최종접속일',ro('2026-09-08'))}${f('접속매체 · 접속수',ro('Web · 128'))}${f('상태',ro('정상'))}
+      </div>
+      ${f('코멘트',ro('프로모션 9월 1차 대상 · 1인 다단지(3개 단지) 담당'))}
+
+      <div class="sec-div"></div>
+      <div class="sec-t">근무지 <span style="font-weight:400;color:var(--text-3)">— 1인 다단지 · 발송 제외 판단 근거(상태)</span></div>
+      <div class="tbl-wrap">
+        <table class="data"><thead><tr><th>No</th><th>단지명</th><th>직책</th><th>계정구분</th><th>상태</th>
+          <th style="background:var(--p0-bg);color:#8a3025">진행 상태 ${bd('P1')}</th><th style="width:44px"></th></tr></thead>
+        <tbody>${USER_SITES.map(s=>`<tr><td>${s.no}</td><td>${s.apt}</td><td>${s.role}</td>
+          <td><span class="st st-off">${s.acct}</span></td>
+          <td><span class="st ${s.state==='정상'?'st-ok':'st-hold'}">${s.state}</span></td>
+          <td>${s.progress==='해당없음'?'<span style="color:var(--text-3)">—</span>':`<span class="st st-req">${s.progress}</span>`}</td>
+          <td><button class="menu-dot" onclick="toast('⋮ 권한 / 삭제 (목업)')">⋮</button></td></tr>`).join('')}</tbody></table>
+      </div>
+      <div class="hint" style="margin-top:8px">상태가 <b>이용정지 / 휴면 / 거절</b>인 근무지는 프로모션 발송 대상에서 제외한다 (§6). 위 <b>□□빌리지(휴면)</b>가 제외 케이스.</div>
+
+      <div class="sec-div"></div>
+      <div class="sec-t">과거이력 <span style="font-weight:400;color:var(--text-3)">— 소장이 단지를 옮긴 이력</span></div>
+      <div class="tbl-wrap">
+        <table class="data"><thead><tr><th>No</th><th>단지명</th><th>등록일</th><th>해제일</th><th>변경자</th></tr></thead>
+        <tbody>${USER_PAST.map(p=>`<tr><td>${p.no}</td><td>${p.apt}</td><td class="mono">${p.reg}</td><td class="mono">${p.rel}</td><td>${p.by}</td></tr>`).join('')}</tbody></table>
+      </div>
+      <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;font-size:12px;color:var(--text-3)">
+        <span class="btn sm">‹</span><span class="btn sm" style="border-color:var(--brand);color:var(--brand)">1</span><span class="btn sm">2</span><span class="btn sm">›</span>
+      </div>
+      <div class="hint" style="margin-top:8px">9월 컨택 후 10월에 단지를 옮긴 소장은 <b>단지 기준 추출에서 빠진다</b>. 과거이력으로 이어붙일지 결정 필요. ${ask('소장 이동 시 이력 승계')}</div>
+    </div>`;
+  } else {
+    body=`<div class="card-b"><div class="note">목업 범위 밖 탭입니다. <b>사용자정보</b> / <b>인바운드 이력</b> 탭에서 프로모션 표시를 확인하세요.</div></div>`;
+  }
+
+  return `
+  <div class="page-h"><h2>사용자 관리</h2></div>
+  <div class="note warn">장면 ③ — <b>사용자관리는 계정 관리 화면이지 영업 화면이 아니다.</b> 프로모션은 <b>보여주기만</b> 한다 · 이 장면의 신규 <b>입력</b> 필드는 <b>0개</b>다 (§4-3).</div>
+
+  <div class="summary-strip">
+    <span style="font-size:15px">🎯</span>
+    <b>프로모션 컨택 요약</b>
+    <span class="st st-new">9월 1차</span>
+    <span>· 최근 컨택 <b>2026-09-08</b></span>
+    <span>· 관련 단지 <b>2개</b></span>
+    <span class="bdg b-ro">표시 전용</span>
+    ${bd('P1')}
+    ${ask('단지 N개·진행중 N건 계산 방식')}
+  </div>
+
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:start">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="card-h" style="padding:11px 14px"><h3 style="font-size:13px">사용자 리스트</h3><span class="bdg b-ro">배지만 추가</span></div>
+      <div>${userList}</div>
+    </div>
+    <div class="card ro-zone" style="margin:0">
+      <div class="card-h"><h3>${esc(u.name)} <span style="font-weight:400;color:var(--text-3);font-size:12px">· 단지 {${u.aptCnt}}개 | 진행중 {${u.active}}건</span></h3>
+        <span class="bdg b-ro">이 영역 전체 표시 전용</span></div>
+      ${tabs}
+      ${body}
+    </div>
+  </div>`;
+}
+function setTab3(i){TAB3=i;render();}
+
+/* =========================================================
+   장면 ④ 추출 (9종 · 대표 3종 데이터 · 엑셀)
+   ========================================================= */
+function scene4(){
+  const rows=CONTRACT_ROWS.filter(r=>PROMO_FILTER==='전체'?true:(PROMO_FILTER==='500세대 이상'?r.hh>=500:r.tgt===PROMO_FILTER[0]));
+  const stCls=st=>({'의뢰':'st-req','진행':'st-ok','보류':'st-hold','계약':'st-ok'}[st]||'st-off');
+  const body=rows.map(r=>`<tr>
+    <td>${r.no}</td>
+    <td><b>${esc(r.name)}</b></td>
+    <td>${esc(r.apt)}</td>
+    <td class="mono">${r.hh?esc(r.hh)+(r.hh>=500?' <span class="st st-new" style="font-size:10px">500↑</span>':''):'<span class="st st-hold">미입력</span>'}</td>
+    <td>${r.tgt==='미판정'?'<span class="st st-off">미판정</span>':`<span class="st st-new">${esc(r.tgt)}</span>`}</td>
+    <td>${esc(r.aware)}</td>
+    <td>${r.sales?esc(r.sales):'<span style="color:var(--text-3)">—</span>'}</td>
+    <td><span class="st ${stCls(r.state)}">${esc(r.state)}</span></td>
+    <td>${r.visit==='O'?'<span class="st st-ok">O</span>':'<span class="st st-off">X</span>'}</td>
+    <td class="mono">${r.cdate?esc(r.cdate):'<span style="color:var(--text-3)">—</span>'}</td></tr>`).join('');
+
+  const modal = DL_OPEN ? `
+  <div class="modal-back" onclick="if(event.target===this)toggleDl()">
+    <div class="modal">
+      <div class="modal-h">
+        <div><h3>엑셀 다운로드 — 컬럼 명세</h3>
+          <div style="font-size:11.5px;color:var(--text-3);margin-top:4px">현행 <b>${DL_NOW.length}개</b> + 추가 <b>${DL_ADD_P0.length+DL_ADD_P1.length+DL_ADD_P2.length}개</b> · v0.4 §05</div></div>
+        <button class="btn ghost" onclick="toggleDl()">✕</button>
+      </div>
+      <div class="modal-b">
+        <div class="note">v0.4 — <b>전용 추출 UI를 만들지 않는다.</b> 기존 계약/인바운드 리스트의 <b>다운로드 컬럼·필터</b>로 업무용 4종을 처리한다.</div>
+
+        <div class="col-sec">
+          <div class="col-sec-h"><span class="bdg b-keep">현행</span> 이미 나오는 컬럼 ${DL_NOW.length}개</div>
+          <div class="col-grid">${DL_NOW.map(c=>`<span class="col now">${esc(c)}</span>`).join('')}</div>
+        </div>
+
+        <div class="col-sec">
+          <div class="col-sec-h">${bd('P0')} 4종 추출이 성립하려면 반드시 필요</div>
+          <div class="col-grid">${DL_ADD_P0.map(c=>`<span class="col ${c.miss?'miss':'a0'}">${esc(c.t)}</span>`).join('')}</div>
+          <div class="note warn" style="margin:10px 0 0">
+            <b>세대수가 현행 26개 컬럼에 없다.</b> v0.4의 500 분기는 프로세스의 핵심 갈림인데,
+            그 판정 키가 다운로드로 나오지 않는다. 업무용 4종 중 <b>3종</b>(방문의뢰 처리 · 교육 DB 아웃바운드 · 500세대↑ 누락 점검)이 세대수 없이는 못 뽑힌다.<br>
+            <b>견적서 발송일</b>도 v0.3에서 발견된 누락이 그대로다 — 계약 폼에는 있고 다운로드에는 없다.</div>
+        </div>
+
+        <div class="col-sec">
+          <div class="col-sec-h">${bd('P1')} 성과 판독·후속 이관</div>
+          <div class="col-grid">${DL_ADD_P1.map(c=>`<span class="col a1">${esc(c)}</span>`).join('')}</div>
+        </div>
+
+        <div class="col-sec">
+          <div class="col-sec-h">${bd('P2')} 정책 확정 후</div>
+          <div class="col-grid">${DL_ADD_P2.map(c=>`<span class="col a2">${esc(c)}</span>`).join('')}</div>
+        </div>
+
+        <div class="note warn" style="margin-bottom:0">
+          <b>다운로드가 현재 검색·필터 결과 기준인가, 전체 덤프인가.</b> v0.3부터 미회신이다.
+          전체 덤프라면 <b>대상 구분·세대수 필터</b>를 화면에 붙여야 한다 — 안 그러면 매번 전 계약을 받아 엑셀에서 거른다. ${ask('개발')}</div>
+      </div>
+      <div class="modal-f">
+        <span style="font-size:11.5px;color:var(--text-3)">붉은색 = 필수 · 주황 = P1 · 흰색 = P2 · 회색 = 현행</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="toggleDl()">닫기</button>
+          <button class="btn primary" onclick="toast('현행 26개 컬럼 기준으로만 내려받습니다 — <b>세대수·견적서 발송일 미포함</b> (목업)')">현행 컬럼으로 다운로드</button>
+        </div>
+      </div>
+    </div>
+  </div>` : '';
+
+  return `
+  <div class="page-h"><h2>계약 관리</h2>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" onclick="toggleDl()">⤓ 엑셀 다운로드</button>
+      <button class="btn primary" onclick="toast('계약 신규 등록 (목업)')">+ 신규 등록</button>
+    </div>
+  </div>
+
+  <div class="note">장면 ④ — v0.4 §05: <b>전용 추출 UI 신설 없음.</b> 기존 계약 목록에 <b>대상 구분·세대수 필터</b>와 <b>다운로드 컬럼</b>을 붙여 업무용 4종을 처리한다. 여기는 <b>작업 대상 추출</b>이고, 성과 판독은 <b>장면 ⑥ 매출관리</b>가 맡는다.</div>
+
+  <div class="filterbar">
+    <div class="fld">
+      <label>대상 구분 / 세대수 ${bd('P0')}</label>
+      <select class="ctl" onchange="setPromoFilter(this.value)">
+        ${['전체','A · 신규(DB 없음)','B · 견적 이력','C · 이탈','500세대 이상'].map(o=>`<option ${o===PROMO_FILTER?'selected':''}>${esc(o)}</option>`).join('')}
+      </select>
+      <div class="hint">v0.4에서 새로 필요한 <b>유일한 필터</b>. 나머지 조건은 엑셀에서 거른다</div>
+    </div>
+    <div class="fld"><label>계약상태</label>${sel(['전체','의뢰','계약','진행','완료','파기','보류'],'전체')}<div class="hint">현행 필터</div></div>
+    <div class="fld"><label>인지경로</label>${sel(['전체'].concat(OPT.aware),'전체')}<div class="hint">v0.4 신설 — 캠페인 성과의 측정축</div></div>
+    <div style="padding-bottom:20px">${ask('다운로드가 필터 결과 기준인가 전체 덤프인가')}</div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="data">
+      <thead><tr><th>No</th><th>계약명</th><th>단지명</th><th>세대수</th><th>대상</th><th>인지경로</th><th>영업담당</th><th>계약상태</th><th>방문의뢰</th><th>계약일</th></tr></thead>
+      <tbody>${body||'<tr><td colspan="10" style="text-align:center;color:var(--text-3);padding:26px">해당 조건의 계약이 없습니다</td></tr>'}</tbody>
+    </table>
+  </div>
+  <div class="rowcnt">총 <b>${rows.length}</b>건 ${PROMO_FILTER!=='전체'?`· <b>${esc(PROMO_FILTER)}</b>`:''}</div>
+
+  <details class="fold" ${DEF9_OPEN?'open':''} style="margin-top:14px">
+    <summary onclick="DEF9_OPEN=!DEF9_OPEN">업무용 추출 4종 — 소유 · 용도 · 필요 컬럼 (v0.4 §05)</summary>
+    <div class="fold-b">
+      <div class="note warn" style="margin:0 0 10px;font-size:11.5px">
+        v0.3의 <b>후속 9종 프리셋은 삭제</b>됐다. 남은 4종 중 <b>3종이 세대수 컬럼 없이는 못 뽑힌다.</b></div>
+      <div class="tbl-wrap"><table class="data">
+        <thead><tr><th>리스트</th><th>소유</th><th>용도</th><th>필요 컬럼</th><th>현행 다운로드로</th></tr></thead>
+        <tbody>${EXTRACTS.map(e=>`<tr>
+          <td><b>${esc(e.t)}</b></td>
+          <td>${esc(e.own)}</td>
+          <td style="font-size:11.5px;color:var(--text-2)">${esc(e.use)}</td>
+          <td style="font-size:11.5px;color:var(--text-2)">${esc(e.need)}</td>
+          <td>${e.ok==='miss'?'<span class="st st-hold">세대수 없어 불가</span>':'<span class="st st-req">일부 가능</span>'}</td></tr>`).join('')}</tbody>
+      </table></div>
+      <div style="margin-top:12px;font-size:11.5px;color:var(--text-2)">
+        <b>삭제된 것</b> — ${CUT.map(c=>`<span class="bdg b-p2" style="margin-right:4px">${esc(c.t)}</span>`).join('')}
+      </div>
+    </div>
+  </details>
+  ${modal}`;
+}
+function setPromoFilter(v){PROMO_FILTER=v;render();}
+function toggleDl(){DL_OPEN=!DL_OPEN;render();}
+
+/* =========================================================
+   장면 ⑤ 방문의뢰 — 500세대 분기 (v0.4 §03·§06)
+   ========================================================= */
+function scene5(){
+  const stCls=v=>({'미소화':'st-hold','방문 완료':'st-req','계약 완료':'st-ok'}[v]||'st-off');
+  const up=VISIT_ROWS.map(r=>`<tr>
+    <td><b>${esc(r.apt)}</b></td>
+    <td class="mono">${esc(r.hh)} <span class="st st-new" style="font-size:10px">500↑</span></td>
+    <td>${esc(r.person)}</td>
+    <td><span class="st st-new">${esc(r.tgt)}</span></td>
+    <td>${esc(r.aware)}</td>
+    <td>${esc(r.sales)}</td>
+    <td class="mono">${esc(r.reg)}</td>
+    <td><span class="st ${stCls(r.state)}">${esc(r.state)}</span></td>
+    <td>${r.state==='미소화'?`<button class="btn sm" onclick="toast('방문 일정 등록 (목업)')">방문 등록</button>`:''}</td></tr>`).join('');
+  const down=NOVISIT_ROWS.map(r=>`<tr>
+    <td><b>${esc(r.apt)}</b></td>
+    <td class="mono">${esc(r.hh)}</td>
+    <td>${esc(r.person)}</td>
+    <td>${esc(r.consult)}</td>
+    <td class="mono">${r.quote?esc(r.quote):'<span style="color:var(--text-3)">—</span>'}</td>
+    <td>${esc(r.own)}</td></tr>`).join('');
+  const miss=VISIT_ROWS.filter(r=>r.state==='미소화').length;
+
+  return `
+  <div class="page-h"><h2>방문의뢰 — 500세대 분기</h2>
+    <button class="btn" onclick="downloadVisitCsv()">⤓ CSV 다운로드</button>
+  </div>
+
+  <div class="note">장면 ⑤ — v0.4 §03의 <b>세대수 500 분기</b>를 화면으로 옮긴 것입니다. 고지가 인바운드를 받아 <b>500 이상은 방문의뢰로 영업에 넘기고, 미만은 고지가 직접</b> 미방문 계약 모수로 관리합니다.</div>
+
+  <div class="card">
+    <div class="card-h">
+      <div><h3>500세대 이상 — 방문의뢰 (영업 소화)</h3>
+        <div style="font-size:11.5px;color:var(--text-3);margin-top:4px">고지파트 등록 → 영업파트 <b>100% 소화</b> (v0.4 §03)</div></div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <span class="bdg b-p0">미소화 ${miss}건</span><span class="bdg b-p2">소유 영업</span>
+      </div>
+    </div>
+    <div class="card-b">
+      <div class="tbl-wrap"><table class="data">
+        <thead><tr><th>단지명</th><th>세대수</th><th>소장</th><th>대상</th><th>인지경로</th><th>영업담당</th><th>등록일</th><th>처리 상태</th><th></th></tr></thead>
+        <tbody>${up}</tbody></table></div>
+      <div class="rowcnt">총 <b>${VISIT_ROWS.length}</b>건 · 미소화 <b>${miss}</b>건 — <b>500세대 이상 방문의뢰 누락 대상</b>(추출 4종 중 3번)이 바로 이 미소화 건이다</div>
+    </div>
+  </div>
+
+  <div class="card ro-zone">
+    <div class="card-h">
+      <div><h3>500세대 미만 — 고지파트 미방문 계약 모수</h3>
+        <div style="font-size:11.5px;color:var(--text-3);margin-top:4px">방문 없이 고지가 직접 계약까지 관리</div></div>
+      <span class="bdg b-tbd">화면·추출 미정의</span>
+    </div>
+    <div class="card-b">
+      <div class="note warn" style="margin:0 0 12px">
+        <b>분기가 한쪽만 구현돼 있다.</b> v0.4 §03은 "500세대 미만 — 고지파트 미방문 계약 모수 관리"라고 한 줄 적었지만,
+        §05 추출 4종에도 §06 화면 변경에도 <b>미만 쪽이 없다.</b> 아래 표는 <b>있어야 할 모습의 제안</b>이지 v0.4에 근거가 있는 화면이 아니다.
+        ${ask('500세대 미만 모수 — 관리 주체·화면·추출 정의 필요')}</div>
+      <div class="tbl-wrap"><table class="data">
+        <thead><tr><th>단지명</th><th>세대수</th><th>소장</th><th>상담 상태값</th><th>견적서 발송일</th><th>소유</th></tr></thead>
+        <tbody>${down}</tbody></table></div>
+      <div class="rowcnt">총 <b>${NOVISIT_ROWS.length}</b>건</div>
+    </div>
+  </div>
+
+  <div class="note warn">
+    <b>세대수 미입력 단지는 어느 쪽으로도 못 간다.</b> 위 계약 목록의 <b>☆☆단지</b>가 세대수 0(미입력) 케이스다.
+    500 분기가 프로세스의 핵심 갈림인데 판정 키가 비어 있으면 그 건은 고지·영업 어디에도 잡히지 않는다.
+    ${ask('세대수 미입력 단지 처리 규칙 — v0.4 §07')}</div>`;
+}
+function downloadVisitCsv(){
+  const head=['구분','단지명','세대수','소장','대상 구분','인지경로','영업담당','등록일','처리 상태'];
+  const rows=VISIT_ROWS.map(r=>['500세대 이상',r.apt,r.hh,r.person,r.tgt,r.aware,r.sales,r.reg,r.state])
+    .concat(NOVISIT_ROWS.map(r=>['500세대 미만',r.apt,r.hh,r.person,'-','-',r.own,'-',r.consult]));
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const csv='﻿'+[head.map(q).join(','),...rows.map(r=>r.map(q).join(','))].join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download='promo_visit_split500_20260920.csv';
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  toast(`<b>방문의뢰 500 분기</b> ${rows.length}행 다운로드 (UTF-8 BOM)`);
+}
+
+/* =========================================================
+   장면 ⑥ 매출관리 계약 내역 조회 — 월 분기 (성과 집계)
+   ========================================================= */
+function scene6(){
+  const won=n=>n.toLocaleString('ko-KR');
+  const all=REV_ROWS.filter(r=>REV_MONTH==='전체'?true:(REV_BASIS==='매출월'?r.rmonth===REV_MONTH:r.reg.slice(0,7)===REV_MONTH));
+  const promo=all.filter(r=>r.promo!=='해당없음');
+  const sum=a=>a.reduce((x,r)=>x+r.amt,0);
+  const byTgt=['A','B','C'].map(t=>({t,n:promo.filter(r=>r.tgt===t).length,amt:sum(promo.filter(r=>r.tgt===t))}));
+
+  const body=all.map(r=>`<tr>
+    <td class="mono">${esc(r.id)}</td>
+    <td><b>${esc(r.name)}</b></td>
+    <td>${esc(r.prod)}</td>
+    <td>${esc(r.item)}</td>
+    <td class="mono">${esc(r.biz)}</td>
+    <td class="mono">${esc(r.rmonth)}</td>
+    <td class="mono" style="text-align:right">${won(r.amt)}</td>
+    <td class="mono">${esc(r.cdate)}</td>
+    <td class="mono">${esc(r.edate)}</td>
+    <td class="mono">${esc(r.reg)}</td>
+    <td>${esc(r.corp)}</td>
+    <td>${esc(r.sales)}</td>
+    <td>${r.promo==='해당없음'?'<span class="st st-off">해당없음</span>':`<span class="st st-new">${esc(r.promo)}</span>`}</td>
+    <td>${r.tgt==='—'?'<span style="color:var(--text-3)">—</span>':`<span class="st st-req">${esc(r.tgt)}</span>`}</td></tr>`).join('');
+
+  return `
+  <div class="page-h"><h2>계약 내역 조회</h2>
+    <div style="display:flex;gap:8px;align-items:center">
+      ${bd('P1')}
+      <button class="btn" onclick="toast('현행 컬럼 + <b>프로모션 라벨 · 대상 구분</b> 2컬럼 추가 기준 다운로드 (목업)')">⤓ 엑셀 다운로드</button>
+    </div>
+  </div>
+
+  <div class="note">장면 ⑥ — <b>성과 집계</b> 화면입니다. 장면 ④(계약 관리 목록)가 <b>작업 대상 추출</b>이라면, 여기는 <b>결과 판독</b>입니다. 둘을 한 화면에 섞지 않습니다.</div>
+
+  <div class="filterbar">
+    <div class="fld">
+      <label>기간 구분 ${bd('P0')}</label>
+      <select class="ctl" onchange="setRevBasis(this.value)">
+        ${['매출월','등록일','계약일'].map(o=>`<option ${o===REV_BASIS?'selected':''}>${esc(o)}</option>`).join('')}
+      </select>
+      <div class="hint">셀렉트는 <b>이미 있다</b> — 옵션만 늘리면 된다</div>
+    </div>
+    <div class="fld">
+      <label>월 분기 ${bd('P0')}</label>
+      <select class="ctl" onchange="setRevMonth(this.value)">
+        ${['2026-09','2026-10','전체'].map(o=>`<option ${o===REV_MONTH?'selected':''}>${esc(o)}</option>`).join('')}
+      </select>
+      <div class="hint">기간조회 date 2개 대신 <b>월 프리셋</b></div>
+    </div>
+    <div class="fld"><label>제품구분</label>${sel(['전체','아파트너스','이지스','더아파트'],'전체')}<div class="hint">현행 필터</div></div>
+    <div class="fld"><label>상품 명</label>${sel(['전체','월납','일시납','월납 재계약','월납선납 재계약','기타'],'전체')}<div class="hint">현행 필터 — 납부 방식이 여기 들어 있다</div></div>
+    <div class="fld"><label>통합검색</label>${inp('','검색어 입력')}<div class="hint">현행 필터</div></div>
+  </div>
+
+  <div class="summary-strip">
+    <b>${esc(REV_BASIS)} ${esc(REV_MONTH)}</b>
+    <span>전체 <b>${all.length}</b>건 · ${won(sum(all))}원</span>
+    <span style="color:var(--pink)">프로모션 <b>${promo.length}</b>건 · ${won(sum(promo))}원</span>
+    ${byTgt.map(b=>`<span>${b.t} <b>${b.n}</b>건 · ${won(b.amt)}원</span>`).join('')}
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="data">
+      <thead><tr>
+        <th>ID</th><th>계약명</th><th>제품구분</th><th>상품명</th><th>사업자등록번호</th><th>매출월</th>
+        <th style="text-align:right">매출액</th><th>계약일</th><th>계약종료일</th><th>등록일</th><th>법인명</th><th>영업담당자</th>
+        <th style="color:var(--p0)">프로모션 라벨</th><th style="color:var(--p0)">대상</th>
+      </tr></thead>
+      <tbody>${body||'<tr><td colspan="14" style="text-align:center;color:var(--text-3);padding:26px">해당 기간의 계약이 없습니다</td></tr>'}</tbody>
+    </table>
+  </div>
+  <div class="rowcnt">총 <b>${all.length}</b>개 · 마지막 2개 컬럼(<b>프로모션 라벨 · 대상 구분</b>)이 이 화면에 추가할 전부다 ${bd('P0')}</div>
+
+  <div class="note warn" style="margin-top:14px">
+    <b>매출월로 자르면 계약 전 단계가 통째로 빠진다.</b>
+    매출월은 계약이 성사된 건에만 붙는데, 추출 4종 중 <b>3종</b>(방문의뢰 처리 · 교육 DB 아웃바운드 · 500세대↑ 누락 점검)은 의뢰·상담·견적 단계를 뽑는 리스트다.
+    그래서 <b>작업 대상 추출은 장면 ④</b>에서 <b>등록일(인입월)</b> 기준으로 하고, 이 화면은 성과 판독만 맡는다.
+    위 <b>기간 구분</b>을 <b>등록일</b>로 바꿔보면 같은 데이터가 다른 달로 떨어지는 게 보인다. ${ask('등록일 = 인입 시점이 맞는가 — 개발')}
+  </div>
+
+  <div class="note warn">
+    <b>이 화면에 없는 것</b> — 세대수 · 인지경로 · 견적서 발송일 · 방문의뢰 여부.
+    500 분기와 4종 추출은 여기서 안 나온다. 특히 <b>세대수</b>는 계약 다운로드 26개 컬럼에도 없다(장면 ④ 모달 참조).
+    ${ask('세대수 컬럼 추가 — 개발 최우선')}
+  </div>
+
+  <div class="note warn" style="margin-bottom:0">
+    <b>영업담당자 컬럼이 이미 있다.</b> v0.4 §04는 이걸 <b>신설</b>이라고 적었는데, 이 화면에는 이미 존재한다.
+    같은 필드면 신설 항목 하나가 사라지고, 다른 필드면 <b>이름이 같은 두 값</b>이 생긴다.
+    사업자등록번호·매출액이 있는 화면이라 <b>권한 4단계·마스킹</b>도 별도로 걸린다 — 고지·영업파트가 이 화면을 볼 수 있는지가 미정.
+    ${ask('영업담당자 중복 여부 · 이 화면의 파트별 열람 권한')}
+  </div>`;
+}
+function setRevMonth(v){REV_MONTH=v;render();}
+function setRevBasis(v){REV_BASIS=v;render();}
+
+/* =========================================================
+   렌더
+   ========================================================= */
+function render(){
+  renderNav();
+  const h={1:scene1,2:scene2,3:scene3,4:scene4,5:scene5,6:scene6}[SCENE]();
+  document.getElementById('sceneHost').innerHTML=h;
+}
+renderAsk();
+render();
+</script>
+</body>
+</html>
