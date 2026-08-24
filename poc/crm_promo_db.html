@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<!--
+  프로모션 추적 DB 구조 — crm_promo_db.html
+  근거: PRD 「장수계 9·10월 프로모션 추적」 v0.4 (2026-08-21 개발 회신 반영본)
+  대조 대상: 개발자 DB 구조 초안(2차) — 5테이블 ERD
+  · 단일 HTML · 인라인 CSS/SVG · 외부 리소스 없음
+  · 실명·실연락처·실이메일 0건
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프로모션 추적 DB 구조 · v0.4</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E7E9E2; --card:#F4F5F0; --ink:#131A1F; --muted:#68716A;
+  --rule:#C0C6BA; --rule2:#D6DACE; --alert:#B23A1E; --keep:#1D6B58;
+  --pk:#2A5A82; --fk:#8C7433; --ext:#8A8F88;
+}
+*{box-sizing:border-box;margin:0;}
+body{background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans KR',sans-serif;font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1500px;margin:0 auto;padding:0 60px 100px;}
+@media(max-width:900px){.wrap{padding:0 20px 70px;}}
+header{border-bottom:2px solid var(--ink);padding:48px 0 20px;margin-bottom:32px;}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
+h1{font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.25;}
+h1 span{display:block;font-size:15.5px;font-weight:500;color:var(--muted);margin-top:8px;}
+.metaline{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:18px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);}
+.metaline b{color:var(--ink);font-weight:500;}
+section{margin-bottom:46px;}
+h2{font-size:19px;font-weight:700;letter-spacing:-.02em;padding-bottom:8px;border-bottom:1px solid var(--ink);margin-bottom:8px;display:flex;align-items:baseline;gap:12px;}
+h2 .num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.1em;}
+.lede{color:var(--muted);font-size:13.5px;margin:14px 0 18px;max-width:82ch;}
+h3{font-size:14.5px;font-weight:600;margin:26px 0 10px;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
+h3 code{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);font-weight:400;}
+table{width:100%;border-collapse:collapse;margin:12px 0 6px;font-size:12.5px;}
+th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:0 12px 7px 0;border-bottom:1px solid var(--rule);vertical-align:bottom;}
+td{padding:9px 12px 9px 0;border-bottom:1px solid var(--rule2);vertical-align:top;line-height:1.55;}
+td.k{font-weight:600;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11.5px;}
+td .sub{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;}
+.tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;padding:1px 6px;border-radius:3px;letter-spacing:.04em;white-space:nowrap;vertical-align:1px;}
+.t-new{background:var(--alert);color:#fff;}
+.t-chg{background:var(--fk);color:#fff;}
+.t-keep{background:var(--rule2);color:var(--muted);}
+.t-pk{background:var(--pk);color:#fff;}
+.t-fk{background:#fff;color:var(--fk);border:1px solid var(--fk);}
+.t-ext{background:#fff;color:var(--ext);border:1px solid var(--rule);}
+.call{border-left:3px solid var(--ink);padding:2px 0 2px 16px;margin:18px 0;font-size:13.5px;}
+.call.warn{border-left-color:var(--alert);}
+.call.ok{border-left-color:var(--keep);}
+.call .h{font-weight:600;display:block;margin-bottom:3px;}
+.call.warn .h{color:var(--alert);}
+.call.ok .h{color:var(--keep);}
+.call p{color:var(--muted);}
+.mapbox{background:var(--card);border:1px solid var(--rule);border-radius:3px;padding:8px;overflow-x:auto;margin-top:16px;}
+.mapbox svg{display:block;min-width:1120px;width:100%;height:auto;}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);align-items:center;}
+ul.clean{list-style:none;margin:10px 0;}
+ul.clean li{padding:7px 0 7px 22px;border-bottom:1px solid var(--rule2);position:relative;font-size:13px;}
+ul.clean li::before{content:"—";position:absolute;left:0;color:var(--muted);}
+ul.open li::before{content:"\25A1";color:var(--alert);font-family:'IBM Plex Mono',monospace;}
+code{font-family:'IBM Plex Mono',monospace;font-size:.92em;background:var(--card);border:1px solid var(--rule2);border-radius:3px;padding:1px 5px;}
+footer{border-top:1px solid var(--rule);padding-top:16px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);line-height:1.9;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">아파트너스 · CRM · 프로모션 추적 · DB 구조</div>
+  <h1>프로모션 추적 DB 구조 — v0.4 기준
+    <span>개발자 초안(2차)을 현재 PRD에 맞춰 재정렬. 테이블명·단지 FK·영업담당자 FK가 핵심 변경</span>
+  </h1>
+  <div class="metaline">
+    <div>작성 <b>2026-08-21</b></div>
+    <div>근거 <b>PRD v0.4 (개발 회신 반영본)</b></div>
+    <div>대조 <b>DB 구조 초안 2차 · 5테이블</b></div>
+    <div>동반 산출물 <b>crm_promo_schema.sql · .dbml</b></div>
+  </div>
+</header>
+
+<!-- 00 -->
+<section>
+  <h2><span class="num">00</span>초안 대비 무엇이 달라지나</h2>
+  <p class="lede">초안은 v0.3 시점 구조다. 그 사이 그릇이 계약에서 <b>기회</b>로 올라갔고, 단지·영업담당자가 엔티티로 확정됐다. 아래 두 가지는 <b>초안에 없으면 화면이 성립하지 않는</b> 항목이다.</p>
+  <table>
+    <thead><tr><th style="width:19%">항목</th><th style="width:31%">초안 (2차)</th><th>v0.4</th></tr></thead>
+    <tbody>
+      <tr><td class="k">테이블명</td><td>프로모션 데이터</td><td class="k"><b>기회</b> <code>opportunity</code> <span class="tag t-chg">변경</span><span class="sub">프로모션_id가 nullable이 된 이상 프로모션 전용 테이블이 아니다. 안 고치면 6개월 뒤 "왜 일반 영업 건이 프로모션 테이블에 있냐"가 돌아온다</span></td></tr>
+      <tr><td class="k">단지 FK</td><td style="color:var(--alert);font-weight:600">없음</td><td class="k"><b>단지_id 필수</b> <span class="tag t-new">신규</span><span class="sub">PRD §1-5 「단지 1:N 기회」. K-apt 선등록도 가등록도 붙을 데가 없어진다</span></td></tr>
+      <tr><td class="k">영업담당자</td><td>일반 컬럼 (문자열)</td><td class="k"><b>영업담당자_id FK</b> <span class="tag t-chg">변경</span><span class="sub">PRD §1-4 정본 = 기회. 문자열이면 인바운드·계약과 3중으로 갈린다</span></td></tr>
+      <tr><td class="k">프로모션_id</td><td>FK (NULL 여부 미표기)</td><td class="k"><b>NULL 허용</b> <span class="tag t-chg">변경</span><span class="sub">프로모션 없이도 등록 가능 (§1-3)</span></td></tr>
+      <tr><td class="k">계약 · 인바운드</td><td>1 : 1</td><td class="k"><b>1 : 0..1</b> <span class="tag t-chg">변경</span><span class="sub">기회만 있고 계약·인바운드가 없는 상태가 <b>정상이자 시작 상태</b>다</span></td></tr>
+      <tr><td class="k">발송대상 명단</td><td style="color:var(--alert);font-weight:600">없음</td><td class="k"><b>promotion_target</b> <span class="tag t-new">신규</span><span class="sub">콜백·인바운드의 「프로모션 대상」 표기를 판정할 소스. 기회를 만들지 않는 조회용 명단</span></td></tr>
+      <tr><td class="k">최초 접촉일</td><td style="color:var(--alert);font-weight:600">없음</td><td class="k"><b>최초_접촉일</b> <span class="tag t-new">신규</span><span class="sub">자동 생성이 불가라 사후 등록이 기본 → 등록일이 인입일을 대신하지 못한다</span></td></tr>
+      <tr><td class="k">방문 필드</td><td>방문의뢰일 (입력)</td><td class="k"><b>방문요청일(자동) + 방문예정일</b> <span class="tag t-chg">변경</span><span class="sub">두 값의 간격이 곧 영업 반응 속도. 추출 조건도 「요청일 O + 예정일 공란」으로 깔끔해진다</span></td></tr>
+      <tr><td class="k">할인 구분</td><td>select (값 미정)</td><td class="k"><b>할인_적용 Y/N</b> <span class="tag t-chg">변경</span><span class="sub">할인은 50% 단일</span></td></tr>
+      <tr><td class="k">39개월 계약 여부</td><td>있음</td><td class="k" style="color:var(--muted)"><b>삭제</b> <span class="tag t-keep">제거</span><span class="sub">39개월은 오기(실제 36개월)이고, 상품이 36개월·6개월 2종뿐이라 상품 구분으로 이미 갈린다</span></td></tr>
+      <tr><td class="k">로그 테이블명</td><td>프로모션 로그</td><td class="k"><b>변경 로그</b> <code>change_log</code> <span class="tag t-chg">변경</span><span class="sub">변경테이블명 컬럼을 두고 전 테이블을 받는 구조라 프로모션 한정 이름이 맞지 않는다</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="call warn">
+    <span class="h">단지 FK가 없으면 9월 설계가 통째로 멈춘다</span>
+    <p>PRD의 선행 작업 1번이 「K-apt 기준 단지 DB 선등록(8/31)」이고, 확정 사항 2번이 「기회 등록 시 단지를 생성한다」이다. 그런데 초안의 프로모션 데이터 테이블에는 단지를 가리키는 키가 없다. 이 상태로는 적재한 K-apt 단지도, 영업이 만든 가등록 단지도 기회에 붙지 않는다. <b>P0에서 가장 먼저 잡아야 할 한 줄이다.</b></p>
+  </div>
+</section>
+
+<!-- 01 -->
+<section>
+  <h2><span class="num">01</span>ERD</h2>
+  <p class="lede">회색 테이블은 <b>기존 CRM</b>이라 이번에 만들지 않는다. 붉은 글씨가 신규 컬럼, 주황이 초안에서 성격이 바뀐 컬럼이다.</p>
+  <div class="mapbox">
+<svg viewBox="0 0 1120 880" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="프로모션 추적 ERD">
+<defs><marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#68716A"/></marker></defs>
+<style>
+.tt{font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;font-weight:700;fill:#131A1F;}
+.ts{font-family:'IBM Plex Mono',monospace;font-size:8.5px;fill:#68716A;}
+.key{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;}
+.key.pk{fill:#2A5A82;} .key.fk{fill:#8C7433;}
+.fn{font-family:'IBM Plex Sans KR',sans-serif;font-size:10.5px;fill:#131A1F;}
+.fn.nw{fill:#B23A1E;font-weight:600;} .fn.ch{fill:#8C7433;font-weight:600;} .fn.wn{fill:#B23A1E;font-weight:600;}
+.lk{fill:none;stroke:#68716A;stroke-width:1.2;}
+.lk.dash{stroke-dasharray:4 3;} .lk.thin{stroke-width:1;stroke-dasharray:2 3;}
+.rl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;fill:#68716A;font-weight:600;}
+</style>
+<path class="lk" d="M288,108.5 H344 V115.5 H394" marker-end="url(#ar)"/><text class="rl" x="300" y="101.5">1 : N</text><path class="lk" d="M288,375.5 H320 V116.5" marker-end="url(#ar)"/><text class="rl" x="292" y="368.5">N : 1</text><path class="lk" d="M288,620.5 H366 V136.5 H394" marker-end="url(#ar)"/><text class="rl" x="292" y="613.5">1 : N</text><path class="lk" d="M288,784.5 H380 V157.5 H394" marker-end="url(#ar)"/><text class="rl" x="292" y="777.5">1 : N</text><path class="lk" d="M730,178.5 H790 V108.5 H834" marker-end="url(#ar)"/><text class="rl" x="762" y="171.5">0..1</text><path class="lk" d="M730,199.5 H770 V324.5 H834" marker-end="url(#ar)"/><text class="rl" x="742" y="192.5">0..1</text><path class="lk thin" d="M840,513.5 H818 V364.5 H840" marker-end="url(#ar)"/><text class="rl" x="756" y="506.5">등록 연동</text><path class="lk dash" d="M730,640.5 H800 V640.5 H834" marker-end="url(#ar)"/><text class="rl" x="806" y="633.5">로그</text>
+<g><rect x="50" y="54" width="238" height="212" rx="4" fill="#fff" stroke="#B8912C" stroke-width="1.6"/>
+<rect x="50" y="54" width="238" height="44" rx="4" fill="#FCF6DC" stroke="#B8912C" stroke-width="1.6"/>
+<rect x="50" y="94" width="238" height="4" fill="#FCF6DC"/>
+<text class="tt" x="62" y="74">프로모션 마스터</text>
+<text class="ts" x="62" y="89">promotion</text>
+<line x1="50" y1="98" x2="288" y2="98" stroke="#B8912C" stroke-width="1.6"/>
+<line x1="96" y1="98" x2="96" y2="119" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key pk" x="73" y="112" text-anchor="middle">PK</text>
+<text class="fn" x="104" y="112">프로모션_id</text>
+<line x1="50" y1="119" x2="288" y2="119" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="119" x2="96" y2="140" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="133">프로모션명</text>
+<line x1="50" y1="140" x2="288" y2="140" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="140" x2="96" y2="161" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="154">기획자</text>
+<line x1="50" y1="161" x2="288" y2="161" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="161" x2="96" y2="182" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="175">기간_시작일</text>
+<line x1="50" y1="182" x2="288" y2="182" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="182" x2="96" y2="203" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="196">기간_종료일</text>
+<line x1="50" y1="203" x2="288" y2="203" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="203" x2="96" y2="224" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="217">혜택</text>
+<line x1="50" y1="224" x2="288" y2="224" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="224" x2="96" y2="245" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="238">등록일</text>
+<line x1="50" y1="245" x2="288" y2="245" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="245" x2="96" y2="266" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="259">등록자</text>
+</g><g><rect x="50" y="300" width="238" height="233" rx="4" fill="#fff" stroke="#1D6B58" stroke-width="1.6"/>
+<rect x="50" y="300" width="238" height="44" rx="4" fill="#E4F1EA" stroke="#1D6B58" stroke-width="1.6"/>
+<rect x="50" y="340" width="238" height="4" fill="#E4F1EA"/>
+<text class="tt" x="62" y="320">프로모션 발송대상</text>
+<text class="ts" x="62" y="335">promotion_target</text>
+<line x1="50" y1="344" x2="288" y2="344" stroke="#1D6B58" stroke-width="1.6"/>
+<line x1="96" y1="344" x2="96" y2="365" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key pk" x="73" y="358" text-anchor="middle">PK</text>
+<text class="fn nw" x="104" y="358">＋ 대상_id</text>
+<line x1="50" y1="365" x2="288" y2="365" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="365" x2="96" y2="386" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key fk" x="73" y="379" text-anchor="middle">FK</text>
+<text class="fn nw" x="104" y="379">＋ 프로모션_id</text>
+<line x1="50" y1="386" x2="288" y2="386" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="386" x2="96" y2="407" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn nw" x="104" y="400">＋ 연락처</text>
+<line x1="50" y1="407" x2="288" y2="407" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="407" x2="96" y2="428" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key fk" x="73" y="421" text-anchor="middle">FK</text>
+<text class="fn nw" x="104" y="421">＋ 단지_id</text>
+<line x1="50" y1="428" x2="288" y2="428" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="428" x2="96" y2="449" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn nw" x="104" y="442">＋ 대상_구분</text>
+<line x1="50" y1="449" x2="288" y2="449" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="449" x2="96" y2="470" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn nw" x="104" y="463">＋ 동의_여부</text>
+<line x1="50" y1="470" x2="288" y2="470" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="470" x2="96" y2="491" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn nw" x="104" y="484">＋ 동의_출처</text>
+<line x1="50" y1="491" x2="288" y2="491" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="491" x2="96" y2="512" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn nw" x="104" y="505">＋ 발송일</text>
+<line x1="50" y1="512" x2="288" y2="512" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="512" x2="96" y2="533" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn nw" x="104" y="526">＋ 등록일</text>
+</g><g><rect x="50" y="566" width="238" height="128" rx="4" fill="#fff" stroke="#A8AEA4" stroke-width="1.6"/>
+<rect x="50" y="566" width="238" height="44" rx="4" fill="#EDEFEA" stroke="#A8AEA4" stroke-width="1.6"/>
+<rect x="50" y="606" width="238" height="4" fill="#EDEFEA"/>
+<text class="tt" x="62" y="586">단지  (기존)</text>
+<text class="ts" x="62" y="601">apartment</text>
+<line x1="50" y1="610" x2="288" y2="610" stroke="#A8AEA4" stroke-width="1.6"/>
+<line x1="96" y1="610" x2="96" y2="631" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key pk" x="73" y="624" text-anchor="middle">PK</text>
+<text class="fn" x="104" y="624">단지_id</text>
+<line x1="50" y1="631" x2="288" y2="631" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="631" x2="96" y2="652" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="645">단지명</text>
+<line x1="50" y1="652" x2="288" y2="652" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="652" x2="96" y2="673" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="666">K-apt 코드</text>
+<line x1="50" y1="673" x2="288" y2="673" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="673" x2="96" y2="694" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn nw" x="104" y="687">＋ 가등록_여부</text>
+</g><g><rect x="50" y="730" width="238" height="107" rx="4" fill="#fff" stroke="#A8AEA4" stroke-width="1.6"/>
+<rect x="50" y="730" width="238" height="44" rx="4" fill="#EDEFEA" stroke="#A8AEA4" stroke-width="1.6"/>
+<rect x="50" y="770" width="238" height="4" fill="#EDEFEA"/>
+<text class="tt" x="62" y="750">영업담당자  (기존 사용자)</text>
+<text class="ts" x="62" y="765">sales_owner</text>
+<line x1="50" y1="774" x2="288" y2="774" stroke="#A8AEA4" stroke-width="1.6"/>
+<line x1="96" y1="774" x2="96" y2="795" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key pk" x="73" y="788" text-anchor="middle">PK</text>
+<text class="fn" x="104" y="788">영업담당자_id</text>
+<line x1="50" y1="795" x2="288" y2="795" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="795" x2="96" y2="816" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="809">성명</text>
+<line x1="50" y1="816" x2="288" y2="816" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="96" y1="816" x2="96" y2="837" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="104" y="830">소속_파트</text>
+</g><g><rect x="400" y="40" width="330" height="653" rx="4" fill="#fff" stroke="#7A5C9E" stroke-width="1.6"/>
+<rect x="400" y="40" width="330" height="44" rx="4" fill="#F3EFFA" stroke="#7A5C9E" stroke-width="1.6"/>
+<rect x="400" y="80" width="330" height="4" fill="#F3EFFA"/>
+<text class="tt" x="412" y="60">기회</text>
+<text class="ts" x="412" y="75">opportunity  ← 초안 「프로모션 데이터」</text>
+<line x1="400" y1="84" x2="730" y2="84" stroke="#7A5C9E" stroke-width="1.6"/>
+<line x1="446" y1="84" x2="446" y2="105" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key pk" x="423" y="98" text-anchor="middle">PK</text>
+<text class="fn ch" x="454" y="98">△ 기회_id</text>
+<line x1="400" y1="105" x2="730" y2="105" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="105" x2="446" y2="126" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key fk" x="423" y="119" text-anchor="middle">FK</text>
+<text class="fn ch" x="454" y="119">△ 프로모션_id  NULL</text>
+<line x1="400" y1="126" x2="730" y2="126" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="126" x2="446" y2="147" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key fk" x="423" y="140" text-anchor="middle">FK</text>
+<text class="fn nw" x="454" y="140">＋ 단지_id</text>
+<line x1="400" y1="147" x2="730" y2="147" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="147" x2="446" y2="168" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key fk" x="423" y="161" text-anchor="middle">FK</text>
+<text class="fn ch" x="454" y="161">△ 영업담당자_id</text>
+<line x1="400" y1="168" x2="730" y2="168" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="168" x2="446" y2="189" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key fk" x="423" y="182" text-anchor="middle">FK</text>
+<text class="fn" x="454" y="182">계약_id  NULL</text>
+<line x1="400" y1="189" x2="730" y2="189" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="189" x2="446" y2="210" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key fk" x="423" y="203" text-anchor="middle">FK</text>
+<text class="fn" x="454" y="203">인바운드_id  NULL</text>
+<line x1="400" y1="210" x2="730" y2="210" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="210" x2="446" y2="231" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="224">생성_채널</text>
+<line x1="400" y1="231" x2="730" y2="231" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="231" x2="446" y2="252" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn nw" x="454" y="245">＋ 최초_접촉일</text>
+<line x1="400" y1="252" x2="730" y2="252" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="252" x2="446" y2="273" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="266">대상_구분</text>
+<line x1="400" y1="273" x2="730" y2="273" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="273" x2="446" y2="294" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="287">인지_경로</text>
+<line x1="400" y1="294" x2="730" y2="294" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="294" x2="446" y2="315" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="308">상담_상태값</text>
+<line x1="400" y1="315" x2="730" y2="315" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="315" x2="446" y2="336" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="329">월납_제안_결과</text>
+<line x1="400" y1="336" x2="730" y2="336" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="336" x2="446" y2="357" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn ch" x="454" y="350">△ 방문요청_여부</text>
+<line x1="400" y1="357" x2="730" y2="357" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="357" x2="446" y2="378" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn ch" x="454" y="371">△ 방문요청_등록경로</text>
+<line x1="400" y1="378" x2="730" y2="378" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="378" x2="446" y2="399" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn ch" x="454" y="392">△ 방문요청일  (자동)</text>
+<line x1="400" y1="399" x2="730" y2="399" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="399" x2="446" y2="420" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn wn" x="454" y="413">⚠ 방문예정일</text>
+<line x1="400" y1="420" x2="730" y2="420" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="420" x2="446" y2="441" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="434">상정_예정일</text>
+<line x1="400" y1="441" x2="730" y2="441" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="441" x2="446" y2="462" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="455">상정_결과일</text>
+<line x1="400" y1="462" x2="730" y2="462" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="462" x2="446" y2="483" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="476">상정_결과</text>
+<line x1="400" y1="483" x2="730" y2="483" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="483" x2="446" y2="504" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="497">아웃바운드_결과</text>
+<line x1="400" y1="504" x2="730" y2="504" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="504" x2="446" y2="525" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="518">아웃바운드_실행일</text>
+<line x1="400" y1="525" x2="730" y2="525" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="525" x2="446" y2="546" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="539">다음_액션일</text>
+<line x1="400" y1="546" x2="730" y2="546" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="546" x2="446" y2="567" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="560">보류_사유</text>
+<line x1="400" y1="567" x2="730" y2="567" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="567" x2="446" y2="588" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn ch" x="454" y="581">△ 할인_적용  Y/N</text>
+<line x1="400" y1="588" x2="730" y2="588" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="588" x2="446" y2="609" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="602">실무_착수일</text>
+<line x1="400" y1="609" x2="730" y2="609" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="609" x2="446" y2="630" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="623">등록일</text>
+<line x1="400" y1="630" x2="730" y2="630" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="630" x2="446" y2="651" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="644">등록자</text>
+<line x1="400" y1="651" x2="730" y2="651" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="651" x2="446" y2="672" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="665">수정일</text>
+<line x1="400" y1="672" x2="730" y2="672" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="446" y1="672" x2="446" y2="693" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="454" y="686">수정자</text>
+</g><g><rect x="840" y="54" width="250" height="191" rx="4" fill="#fff" stroke="#A8AEA4" stroke-width="1.6"/>
+<rect x="840" y="54" width="250" height="44" rx="4" fill="#EDEFEA" stroke="#A8AEA4" stroke-width="1.6"/>
+<rect x="840" y="94" width="250" height="4" fill="#EDEFEA"/>
+<text class="tt" x="852" y="74">계약  (기존)</text>
+<text class="ts" x="852" y="89">contract</text>
+<line x1="840" y1="98" x2="1090" y2="98" stroke="#A8AEA4" stroke-width="1.6"/>
+<line x1="886" y1="98" x2="886" y2="119" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key pk" x="863" y="112" text-anchor="middle">PK</text>
+<text class="fn" x="894" y="112">계약_id</text>
+<line x1="840" y1="119" x2="1090" y2="119" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="119" x2="886" y2="140" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="133">견적서_발송일</text>
+<line x1="840" y1="140" x2="1090" y2="140" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="140" x2="886" y2="161" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="154">계약일</text>
+<line x1="840" y1="161" x2="1090" y2="161" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="161" x2="886" y2="182" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="175">계약종료일</text>
+<line x1="840" y1="182" x2="1090" y2="182" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="182" x2="886" y2="203" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="196">상품_구분</text>
+<line x1="840" y1="203" x2="1090" y2="203" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="203" x2="886" y2="224" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="217">방문일정</text>
+<line x1="840" y1="224" x2="1090" y2="224" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="224" x2="886" y2="245" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="238">담당자1~3 / 연락처1~3</text>
+</g><g><rect x="840" y="270" width="250" height="149" rx="4" fill="#fff" stroke="#A8AEA4" stroke-width="1.6"/>
+<rect x="840" y="270" width="250" height="44" rx="4" fill="#EDEFEA" stroke="#A8AEA4" stroke-width="1.6"/>
+<rect x="840" y="310" width="250" height="4" fill="#EDEFEA"/>
+<text class="tt" x="852" y="290">인바운드  (기존)</text>
+<text class="ts" x="852" y="305">inbound</text>
+<line x1="840" y1="314" x2="1090" y2="314" stroke="#A8AEA4" stroke-width="1.6"/>
+<line x1="886" y1="314" x2="886" y2="335" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key pk" x="863" y="328" text-anchor="middle">PK</text>
+<text class="fn" x="894" y="328">인바운드_id</text>
+<line x1="840" y1="335" x2="1090" y2="335" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="335" x2="886" y2="356" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="349">접수일시</text>
+<line x1="840" y1="356" x2="1090" y2="356" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="356" x2="886" y2="377" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="370">요청유형</text>
+<line x1="840" y1="377" x2="1090" y2="377" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="377" x2="886" y2="398" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="391">연락처</text>
+<line x1="840" y1="398" x2="1090" y2="398" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="398" x2="886" y2="419" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="412">처리상태</text>
+</g><g><rect x="840" y="438" width="250" height="128" rx="4" fill="#fff" stroke="#A8AEA4" stroke-width="1.6"/>
+<rect x="840" y="438" width="250" height="44" rx="4" fill="#EDEFEA" stroke="#A8AEA4" stroke-width="1.6"/>
+<rect x="840" y="478" width="250" height="4" fill="#EDEFEA"/>
+<text class="tt" x="852" y="458">콜백  (기존)</text>
+<text class="ts" x="852" y="473">callback</text>
+<line x1="840" y1="482" x2="1090" y2="482" stroke="#A8AEA4" stroke-width="1.6"/>
+<line x1="886" y1="482" x2="886" y2="503" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key pk" x="863" y="496" text-anchor="middle">PK</text>
+<text class="fn" x="894" y="496">콜백_id</text>
+<line x1="840" y1="503" x2="1090" y2="503" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="503" x2="886" y2="524" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key fk" x="863" y="517" text-anchor="middle">FK</text>
+<text class="fn" x="894" y="517">인바운드_id  NULL</text>
+<line x1="840" y1="524" x2="1090" y2="524" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="524" x2="886" y2="545" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="538">연락처</text>
+<line x1="840" y1="545" x2="1090" y2="545" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="545" x2="886" y2="566" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="559">처리상태</text>
+</g><g><rect x="840" y="586" width="250" height="212" rx="4" fill="#fff" stroke="#C2417A" stroke-width="1.6"/>
+<rect x="840" y="586" width="250" height="44" rx="4" fill="#FBE9EF" stroke="#C2417A" stroke-width="1.6"/>
+<rect x="840" y="626" width="250" height="4" fill="#FBE9EF"/>
+<text class="tt" x="852" y="606">변경 로그</text>
+<text class="ts" x="852" y="621">change_log  ← 초안 「프로모션 로그」</text>
+<line x1="840" y1="630" x2="1090" y2="630" stroke="#C2417A" stroke-width="1.6"/>
+<line x1="886" y1="630" x2="886" y2="651" stroke="#D6DACE" stroke-width=".8"/>
+<text class="key pk" x="863" y="644" text-anchor="middle">PK</text>
+<text class="fn ch" x="894" y="644">△ 로그_id</text>
+<line x1="840" y1="651" x2="1090" y2="651" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="651" x2="886" y2="672" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="665">변경테이블명</text>
+<line x1="840" y1="672" x2="1090" y2="672" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="672" x2="886" y2="693" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="686">변경PK</text>
+<line x1="840" y1="693" x2="1090" y2="693" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="693" x2="886" y2="714" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="707">변경컬럼명</text>
+<line x1="840" y1="714" x2="1090" y2="714" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="714" x2="886" y2="735" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="728">변경전값</text>
+<line x1="840" y1="735" x2="1090" y2="735" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="735" x2="886" y2="756" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="749">변경후값</text>
+<line x1="840" y1="756" x2="1090" y2="756" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="756" x2="886" y2="777" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="770">변경자</text>
+<line x1="840" y1="777" x2="1090" y2="777" stroke="#D6DACE" stroke-width=".8"/>
+<line x1="886" y1="777" x2="886" y2="798" stroke="#D6DACE" stroke-width=".8"/>
+<text class="fn" x="894" y="791">변경일자</text>
+</g>
+</svg>  </div>
+  <div class="legend">
+    <span><b style="color:var(--alert)">＋ 붉은색</b> = 신규</span>
+    <span><b style="color:#8C7433">△ 주황</b> = 초안에서 변경</span>
+    <span><b style="color:#8A8F88">회색 테이블</b> = 기존 CRM (이번 범위 밖)</span>
+    <span>PK = 기본 키 · FK = 외래 키</span>
+    <span>▬ 실선 = 관계 · ┈ 점선 = 변경 로그</span>
+  </div>
+</section>
+
+<!-- 02 -->
+<section>
+  <h2><span class="num">02</span>테이블 정의</h2>
+
+  <h3>기회 <code>opportunity</code> <span class="tag t-new">신규 테이블</span></h3>
+  <p class="lede" style="margin:6px 0 12px">파이프라인의 본체. <b>생성은 기회 등록 화면에서만</b> 가능하고 인바운드·계약은 수정만 한다.</p>
+  <table>
+    <thead><tr><th style="width:8%">키</th><th style="width:22%">컬럼</th><th style="width:16%">타입</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-pk">PK</span></td><td class="k">기회_id</td><td>BIGINT AUTO</td><td>—</td></tr>
+      <tr><td><span class="tag t-fk">FK</span></td><td class="k">프로모션_id</td><td>BIGINT <b>NULL</b></td><td>미선택 = 일반 영업 건 <span class="tag t-chg">변경</span></td></tr>
+      <tr><td><span class="tag t-fk">FK</span></td><td class="k">단지_id</td><td>BIGINT NOT NULL</td><td>K-apt 선등록분 또는 가등록 단지 <span class="tag t-new">신규</span></td></tr>
+      <tr><td><span class="tag t-fk">FK</span></td><td class="k">영업담당자_id</td><td>BIGINT NOT NULL</td><td>기본값 = 로그인 사용자. <b>이 값이 정본</b> <span class="tag t-chg">변경</span></td></tr>
+      <tr><td><span class="tag t-fk">FK</span></td><td class="k">계약_id</td><td>BIGINT NULL</td><td>0..1 — 없는 상태가 정상</td></tr>
+      <tr><td><span class="tag t-fk">FK</span></td><td class="k">인바운드_id</td><td>BIGINT NULL</td><td>0..1</td></tr>
+      <tr><td></td><td class="k">생성_채널</td><td>VARCHAR(20)</td><td>영업 등록 / 발송 seed(10월). <b>인바운드 유입은 자동 생성 불가로 제외</b></td></tr>
+      <tr><td></td><td class="k">최초_접촉일</td><td>DATE</td><td>등록일과 다를 수 있다 — 사후 등록 대비 <span class="tag t-new">신규</span></td></tr>
+      <tr><td></td><td class="k">대상_구분</td><td>VARCHAR(20)</td><td>병목 분산 / Pure 신규 / 이탈 단지 / 교육 DB / 일반 인바운드 <span class="tag t-keep">병목 분산 정의 보류</span></td></tr>
+      <tr><td></td><td class="k">인지_경로</td><td>VARCHAR(20)</td><td>문자·카카오 / 팩스 / 내부 / 외부 / 교육·제휴교육 / 추천·기존 고객</td></tr>
+      <tr><td></td><td class="k">상담_상태값</td><td>VARCHAR(20)</td><td>인바운드 / 상담 / 견적 요청 / 견적 발송 / 방문의뢰 / 계약 / 보류</td></tr>
+      <tr><td></td><td class="k">월납_제안_결과</td><td>VARCHAR(20)</td><td>제안·수용 / 제안·거절 / 미제안</td></tr>
+      <tr><td></td><td class="k">방문요청_여부</td><td>TINYINT(1)</td><td rowspan="4">§1-12 재설계. <b>요청일은 자동, 예정일은 입력</b> <span class="tag t-chg">변경</span></td></tr>
+      <tr><td></td><td class="k">방문요청_등록경로</td><td>VARCHAR(20)</td></tr>
+      <tr><td></td><td class="k">방문요청일</td><td>DATETIME</td></tr>
+      <tr><td></td><td class="k">방문예정일</td><td>DATE</td></tr>
+      <tr><td></td><td class="k">상정_예정일 / 결과일</td><td>DATE</td><td rowspan="2">입주자대표회의 상정 — 화면 라벨에 주어를 붙인다</td></tr>
+      <tr><td></td><td class="k">상정_결과</td><td>VARCHAR(10)</td></tr>
+      <tr><td></td><td class="k">아웃바운드_결과 / 실행일</td><td>VARCHAR(20) / DATE</td><td>D+3 판정 — 영업일 기준, 추석 9/24~26 하드코딩</td></tr>
+      <tr><td></td><td class="k">다음_액션일</td><td>DATE</td><td>—</td></tr>
+      <tr><td></td><td class="k">보류_사유</td><td>VARCHAR(20)</td><td>예산 / 입대의 일정 / 비교 검토 / 내부 확인</td></tr>
+      <tr><td></td><td class="k">할인_적용</td><td>TINYINT(1)</td><td>50% 단일이라 Y/N <span class="tag t-chg">변경</span></td></tr>
+      <tr><td></td><td class="k">실무_착수일</td><td>DATE</td><td>입력 주체 미정</td></tr>
+      <tr><td></td><td class="k">등록일 / 등록자 / 수정일 / 수정자</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h3>프로모션 발송대상 <code>promotion_target</code> <span class="tag t-new">신규 테이블</span></h3>
+  <p class="lede" style="margin:6px 0 12px">콜백·인바운드 화면의 <b>「프로모션 대상」 배지를 판정하는 소스</b>. 기회를 만들지 않는 <b>조회용 명단</b>이라 가볍다. 교육 신청 소장 데이터를 기준으로 적재한다.</p>
+  <table>
+    <thead><tr><th style="width:8%">키</th><th style="width:22%">컬럼</th><th style="width:16%">타입</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-pk">PK</span></td><td class="k">대상_id</td><td>BIGINT AUTO</td><td>—</td></tr>
+      <tr><td><span class="tag t-fk">FK</span></td><td class="k">프로모션_id</td><td>BIGINT NOT NULL</td><td>—</td></tr>
+      <tr><td></td><td class="k">연락처</td><td>VARCHAR(20)</td><td><b>표기 판정의 키</b> — 콜백·인바운드의 연락처와 매칭</td></tr>
+      <tr><td><span class="tag t-fk">FK</span></td><td class="k">단지_id</td><td>BIGINT NULL</td><td>매칭되면 채운다</td></tr>
+      <tr><td></td><td class="k">대상_구분</td><td>VARCHAR(20)</td><td>기회에 초기값으로 전달</td></tr>
+      <tr><td></td><td class="k">동의_여부 / 동의_출처</td><td>TINYINT(1) / VARCHAR(40)</td><td><b>교육 신청 시 수령한 동의</b>가 근거. 발송 대상은 여기로 한정된다</td></tr>
+      <tr><td></td><td class="k">발송일</td><td>DATE</td><td>10월 2차 재홍보 추출의 기준</td></tr>
+    </tbody>
+  </table>
+
+  <h3>프로모션 마스터 <code>promotion</code> <span class="tag t-keep">초안 유지</span></h3>
+  <p class="lede" style="margin:6px 0 12px">초안 그대로 쓴다. <code>혜택</code> 필드가 있어 9월 1차·10월 2차의 조건 차이를 담을 수 있다.</p>
+  <table>
+    <thead><tr><th style="width:8%">키</th><th style="width:22%">컬럼</th><th style="width:16%">타입</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-pk">PK</span></td><td class="k">프로모션_id</td><td>BIGINT AUTO</td><td>—</td></tr>
+      <tr><td></td><td class="k">프로모션명</td><td>VARCHAR(60)</td><td>9월 1차 / 10월 2차</td></tr>
+      <tr><td></td><td class="k">기획자</td><td>VARCHAR(40)</td><td>—</td></tr>
+      <tr><td></td><td class="k">기간_시작일 / 종료일</td><td>DATE</td><td>—</td></tr>
+      <tr><td></td><td class="k">혜택</td><td>VARCHAR(200)</td><td>할인 50% 등</td></tr>
+      <tr><td></td><td class="k">등록일 / 등록자</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h3>변경 로그 <code>change_log</code> <span class="tag t-chg">이름 변경</span></h3>
+  <p class="lede" style="margin:6px 0 12px">초안의 「프로모션 로그」와 컬럼 구성은 같다. <code>변경테이블명</code>을 두고 전 테이블을 받는 구조라 프로모션 한정 이름이 맞지 않는다.</p>
+  <table>
+    <thead><tr><th style="width:8%">키</th><th style="width:22%">컬럼</th><th style="width:16%">타입</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-pk">PK</span></td><td class="k">로그_id</td><td>BIGINT AUTO</td><td>—</td></tr>
+      <tr><td></td><td class="k">변경테이블명 / 변경PK</td><td>VARCHAR / BIGINT</td><td>어느 행이 바뀌었나</td></tr>
+      <tr><td></td><td class="k">변경컬럼명 / 전값 / 후값</td><td>VARCHAR / TEXT</td><td>—</td></tr>
+      <tr><td></td><td class="k">변경자 / 변경일자</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 03 -->
+<section>
+  <h2><span class="num">03</span>관계 정의</h2>
+  <table>
+    <thead><tr><th style="width:34%">관계</th><th style="width:12%">카디널리티</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td class="k">프로모션 → 기회</td><td>1 : N</td><td>기회의 프로모션_id는 <b>NULL 허용</b> — 프로모션 없는 일반 영업 건이 섞인다</td></tr>
+      <tr><td class="k">단지 → 기회</td><td>1 : N</td><td><b>필수.</b> 같은 단지에 기회가 여러 개 생길 수 있다 (§04-1)</td></tr>
+      <tr><td class="k">영업담당자 → 기회</td><td>1 : N</td><td>정본. 인바운드·계약은 이 값을 표시·수정하는 창구</td></tr>
+      <tr><td class="k">기회 → 계약</td><td>1 : 0..1</td><td>계약 없는 기회가 정상. 계약 성사 시 연결</td></tr>
+      <tr><td class="k">기회 → 인바운드</td><td>1 : 0..1</td><td>인바운드 없는 기회(영업 발굴 건)도 정상</td></tr>
+      <tr><td class="k">프로모션 → 발송대상</td><td>1 : N</td><td>연락처로 콜백·인바운드와 매칭</td></tr>
+      <tr><td class="k">전 테이블 → 변경 로그</td><td>1 : N</td><td>테이블명 + PK로 가리키는 느슨한 참조 (FK 아님)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 04 -->
+<section>
+  <h2><span class="num">04</span>설계 논점 — 개발 협의 전 정리</h2>
+
+  <h3>04-1. 같은 단지·같은 프로모션에 기회가 여러 개</h3>
+  <p class="lede" style="margin:6px 0 12px">PRD §1-6에서 <b>중복 시 레코드 추가</b>로 확정됐다. 1차 실패 후 2차 재접촉을 별도 행으로 남기기 위해서다. 따라서 <b>(프로모션_id, 단지_id)에 유니크 제약을 걸면 안 된다.</b></p>
+  <div class="call warn">
+    <span class="h">대신 이게 남는다</span>
+    <p>같은 단지에 진행중 기회가 2개일 때 <b>인바운드가 어느 기회에 붙는가.</b> 최신 건인지, 상담 상태값이 종결이 아닌 건인지 규칙이 필요하다. 안 정하면 연결이 사람 판단으로 넘어가고, 그 순간 추출 건수가 흔들린다.</p>
+  </div>
+
+  <h3>04-2. 방문예정일을 기회에 둘 것인가 계약에서 조인할 것인가</h3>
+  <p class="lede" style="margin:6px 0 12px">PRD §4는 <code>방문예정일</code>을 「계약 테이블에서 조인해 쓰는 값」으로 분류했다. 그런데 <b>계약이 없는 기회에서는 방문 일정을 잡을 곳이 없다.</b> 방문의뢰는 견적·계약보다 앞 단계라 계약이 아직 없는 상태에서 발생한다.</p>
+  <div class="call">
+    <span class="h">권고 — 기회에 둔다</span>
+    <p>기회의 <code>방문예정일</code>을 정본으로 하고, 계약 생성 시 계약의 <code>방문일정</code>으로 승계한다. 그러지 않으면 방문의뢰를 등록하기 위해 계약(의뢰)을 먼저 만들어야 하는데, 그건 v0.4가 그릇을 기회로 올린 취지와 반대다. 이 문서와 SQL은 <b>기회에 두는 안</b>으로 작성했다.</p>
+  </div>
+
+  <h3>04-3. 인지 경로와 계약 유입경로의 중복</h3>
+  <p class="lede" style="margin:6px 0 12px">계약에 이미 <code>유입경로</code>가 있고 기회에 <code>인지_경로</code>를 새로 만든다. 값 목록이 상당 부분 겹친다. PRD는 <b>유입경로 옵션 확장으로 흡수</b>를 권고했으나 미확정이다. 흡수하면 컬럼이 하나 줄고, 별개로 두면 두 값이 어긋나는 데이터가 쌓인다.</p>
+
+  <h3>04-4. 상담 상태값과 계약상태</h3>
+  <p class="lede" style="margin:6px 0 12px">축이 겹치지만 <b>일단 별개 필드로 둔다.</b> 흡수는 기존 리포트 회귀가 붙어 되돌리기 어렵고, 별개는 나중에 합칠 수 있다. 되돌릴 수 있는 쪽을 먼저 고른 것이다.</p>
+
+  <h3>04-5. 인덱스</h3>
+  <ul class="clean">
+    <li><code>promotion_target.연락처</code> — 콜백·인바운드 진입마다 조회한다. <b>없으면 목록이 느려진다</b></li>
+    <li><code>opportunity.단지_id</code> · <code>opportunity.영업담당자_id</code> — 목록 필터의 주 축</li>
+    <li><code>opportunity.프로모션_id</code> — 다운로드가 필터 결과 기준이라 이 필터가 P0로 올라갔다</li>
+    <li><code>opportunity.상담_상태값</code> · <code>다음_액션일</code> — 추출 9종의 조건</li>
+    <li><code>change_log(변경테이블명, 변경PK)</code> — 이력 조회</li>
+  </ul>
+</section>
+
+<!-- 05 -->
+<section>
+  <h2><span class="num">05</span>미확정</h2>
+  <ul class="clean open">
+    <li><b>같은 단지 진행중 기회가 2개일 때 인바운드 연결 규칙</b> — 개발 · 8/27</li>
+    <li><b>방문예정일의 위치</b> — 기회 vs 계약 조인 (이 문서는 기회 안으로 작성) · 개발 · 8/27</li>
+    <li><b>인지 경로 ↔ 유입경로 통합 여부</b> — 개발 · 8/27</li>
+    <li><b>상담 상태값 ↔ 계약상태 흡수 여부</b> — 개발 · 8/27</li>
+    <li><b>테이블·메뉴 명칭 최종 확정</b> — 기회로 통일할지, 화면은 영업관리로 둘지 · 개발·프로덕트 · 8/27</li>
+    <li><b>기존 등록 단지도 K-apt 코드를 쓰는가</b> — 코드 체계 이원화 방지 · 개발 · 8/25</li>
+    <li><b>발송대상 명단 적재 방식</b> — 엑셀 업로드 / 배치 · 개발·교육전략 · <b>최우선</b></li>
+    <li><b>병목 분산의 정의</b> — 값에서 뺄지 · 영업·프로덕트 · 보류</li>
+  </ul>
+</section>
+
+<footer>
+  프로모션 추적 DB 구조 · v0.4 기준 · 2026-08-21<br>
+  근거 — PRD 「장수계 9·10월 프로모션 추적」 v0.4 (개발 회신 반영본) · 개발자 DB 구조 초안 2차 · 목업 crm_promo_mockup.html<br>
+  동반 산출물 — crm_promo_schema.sql (MySQL 8 DDL) · crm_promo_schema.dbml (dbdiagram.io)
+</footer>
+
+</div>
+</body>
+</html>
