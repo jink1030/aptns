@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<!--
+  CRM 영업관리 목업 — crm_sales_mockup_v1.0.html
+  근거: PRD 영업관리 신설 v2.0 / 통합 PRD v0.7 · 현행 화면 캡처 3종(계약상세 / 영업활동 도구 / 단지조회(신))
+  · 껍데기: crm_promo_mockup 색 토큰·장면탭·날개패널 승계 / 레이아웃·필드순서는 캡처 우선
+  · 단일 HTML · 인라인 CSS/JS · 스토리지 API 미사용 · 상태는 JS 메모리 변수
+  · 실명 0건 — 캡처의 인명은 전부 가명(홍길동/임꺽정/성춘향)으로 교체, 단지명도 가공
+  · 인바운드 등록 화면 캡처 미확보 → 지시서 §3 필드 목록으로 재현
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM 영업관리 목업 · v1.0</title>
+<style>
+:root{
+  --brand:#006d8b; --brand-2:#2e87a0; --brand-strong:#005066;
+  --brand-bg20:#f0f6f8; --brand-bg30:#e8f2f5;
+  --text:#222222; --text-2:#54575e; --text-3:#7d8187;
+  --bg:#ffffff; --page:#eef1f4; --surface-2:#f6f8f9; --surface-3:#eceff1;
+  --border:#e0e2e6; --border-strong:#c6c9d0;
+  --p0:#c0392b; --p0-bg:#fbe9e7;
+  --p1:#b3690a; --p1-bg:#fbefdd;
+  --p2:#7d8187; --p2-bg:#f0f1f4;
+  --keep:#1f7a4d; --keep-bg:#e3f3ea;
+  --tbd:#b3690a; --tbd-bg:#fff6e8; --tbd-border:#e6b877;
+  --ask:#6d4bb0; --ask-bg:#efeaf9; --ask-border:#c9b8e8;
+  --r:8px; --r-lg:12px; --shadow:0 1px 3px rgba(20,30,40,.08),0 1px 2px rgba(20,30,40,.05);
+  /* 계약상태 — 캡처 색 매핑 */
+  --s-req:#e02f5a; --s-ctr:#2563eb; --s-run:#38a3d8; --s-done:#8b9199; --s-kill:#e8912a; --s-hold:#b3690a;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:'Pretendard Variable','Pretendard',-apple-system,'Malgun Gothic','맑은 고딕',sans-serif;
+  background:var(--page);color:var(--text);font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+button{font-family:inherit;cursor:pointer;}
+h1,h2,h3,h4{margin:0;font-weight:600;}
+table{border-collapse:collapse;width:100%;}
+input,select,textarea{font-family:inherit;}
+
+/* 목업 툴바 */
+.mockbar{position:sticky;top:0;z-index:80;background:#1c2430;color:#fff;display:flex;align-items:center;gap:14px;padding:9px 20px;}
+.mockbar .mb-title{font-size:14px;font-weight:700;white-space:nowrap;}
+.mockbar .mb-title small{font-weight:400;opacity:.75;font-size:11px;margin-left:7px;}
+.mockbar .sp{flex:1;}
+.scene-tabs{display:flex;background:rgba(255,255,255,.12);border-radius:8px;padding:3px;}
+.scene-tabs button{border:none;background:transparent;color:rgba(255,255,255,.78);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;white-space:nowrap;}
+.scene-tabs button.active{background:#fff;color:#1c2430;font-weight:700;}
+.mb-btn{border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;padding:5px 12px;border-radius:7px;font-size:12px;white-space:nowrap;}
+.mb-btn:hover{background:rgba(255,255,255,.12);}
+.mb-btn .cnt{background:var(--tbd);color:#fff;border-radius:9px;font-size:9.5px;padding:0 5px;margin-left:4px;font-weight:700;}
+
+/* 안내줄 */
+.poc-bar{background:var(--p0-bg);border-bottom:1px solid #f0cdc7;color:#8a3025;font-size:11.5px;padding:6px 20px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;}
+.poc-bar b{font-weight:700;}
+.poc-bar .sep{color:#d8b0aa;}
+
+/* 상단 글로벌 헤더 (캡처 재현) */
+.gnb{background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:8px 18px;}
+.gnb .brand{display:flex;align-items:center;gap:12px;width:190px;flex:0 0 auto;}
+.gnb .brand .lg{font-size:15px;font-weight:800;color:var(--brand);letter-spacing:-.4px;}
+.gnb .brand .lg small{display:block;font-size:8px;font-weight:500;color:var(--text-3);letter-spacing:.06em;}
+.gnb .ham{border:none;background:transparent;color:var(--text-2);font-size:15px;padding:2px 5px;border-radius:5px;}
+.gnb .ham:hover{background:var(--surface-3);}
+.gnb .c{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;}
+.gnb .r{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+.gbtn{border:1px solid var(--border-strong);background:#fff;color:var(--text-2);padding:5px 11px;border-radius:7px;font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+.gbtn:hover{border-color:var(--brand);color:var(--brand);}
+.gbtn.tel{border-color:#31a06f;color:#238156;}
+.gbtn.off{opacity:.45;cursor:not-allowed;}
+.gbtn.wait{border-color:var(--brand);color:var(--brand);background:var(--brand-bg20);}
+.gnb .telin{border:1px solid var(--border-strong);border-radius:7px;padding:5px 11px;font-size:12px;width:260px;min-height:30px;}
+.gnb .me{font-size:12px;color:var(--text-2);white-space:nowrap;}
+
+/* 레이아웃 */
+.app{display:grid;grid-template-columns:206px 1fr;max-width:1720px;margin:0 auto;min-height:70vh;background:var(--bg);}
+.lnb{background:#fff;border-right:1px solid var(--border);padding:12px 0;}
+.lnb-item{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:none;background:transparent;padding:9px 16px;font-size:13px;color:var(--text-2);}
+.lnb-item:hover{background:var(--surface-2);}
+.lnb-item.active{background:var(--brand-bg20);color:var(--brand);font-weight:700;box-shadow:inset 3px 0 0 var(--brand);}
+.lnb-item .ic{width:15px;text-align:center;opacity:.75;font-size:12px;}
+.lnb-item .dot{width:5px;height:5px;border-radius:50%;background:var(--p0);margin-left:2px;}
+.lnb-item .ar{margin-left:auto;font-size:9px;color:var(--text-3);}
+.lnb-sub{display:block;width:100%;text-align:left;border:none;background:transparent;padding:7px 16px 7px 39px;font-size:12.5px;color:var(--text-3);}
+.lnb-sub:hover{background:var(--surface-2);}
+.lnb-sub.active{color:var(--brand);font-weight:700;background:var(--brand-bg20);}
+.lnb-sub.isnew::after{content:'신규';margin-left:6px;font-size:9px;font-weight:700;color:#fff;background:var(--p0);border-radius:3px;padding:0 4px;vertical-align:1px;}
+.main{padding:16px 24px 70px;min-width:0;}
+.crumb{font-size:12px;color:var(--text-3);margin-bottom:10px;}
+.crumb b{color:var(--text);font-weight:600;}
+.page-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;flex-wrap:wrap;}
+.page-h h2{font-size:19px;}
+.page-h .sub{font-size:11.5px;color:var(--text-3);font-weight:400;margin-top:2px;}
+
+/* 배지 */
+.bdg{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;vertical-align:middle;white-space:nowrap;letter-spacing:-.2px;}
+.b-new{background:var(--p0);color:#fff;}
+.b-ask{background:var(--ask-bg);color:var(--ask);border:1px dashed var(--ask-border);}
+.b-ask::before{content:'? ';}
+.b-ro{background:var(--surface-3);color:var(--text-3);border:1px solid var(--border-strong);}
+.b-cur{background:var(--keep-bg);color:var(--keep);border:1px solid #bfe3d0;}
+
+/* 카드/폼 */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);margin-bottom:13px;}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.card-h h3{font-size:14px;}
+.card-b{padding:14px 16px;}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 18px;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px 16px;}
+.span2{grid-column:span 2;}
+.span3{grid-column:span 3;}
+.fld{min-width:0;}
+.fld label{display:block;font-size:11.5px;color:var(--text-2);margin-bottom:5px;font-weight:500;}
+.fld label .req{color:var(--p0);}
+.ctl{width:100%;border:1px solid var(--border-strong);border-radius:var(--r);padding:7px 10px;font-size:12.5px;background:#fff;color:var(--text);min-height:33px;}
+.ctl::placeholder{color:#b3b8bd;}
+.ctl:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-bg30);}
+.ctl[readonly],.ctl:disabled{background:var(--surface-2);color:var(--text-3);}
+textarea.ctl{min-height:70px;resize:vertical;}
+.hint{font-size:10.5px;color:var(--text-3);margin-top:4px;}
+.sec-div{height:1px;background:var(--border);margin:17px 0;}
+.sec-t{font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:11px;display:flex;align-items:center;gap:7px;}
+.sec-t::before{content:'';width:3px;height:12px;background:var(--brand);border-radius:2px;}
+.fld-row{display:flex;gap:7px;align-items:stretch;}
+.fld-row .ctl{flex:1;}
+.fld.isnew label{color:var(--p0);font-weight:700;}
+.fld.isnew .ctl{border-color:var(--p0);background:#fffafa;}
+.amt{text-align:right;font-variant-numeric:tabular-nums;}
+.calc{background:var(--brand-bg20)!important;border-color:var(--brand)!important;color:var(--brand-strong)!important;font-weight:700;}
+.subcard{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-lg);padding:13px 15px;margin-top:14px;}
+.subcard .st-t{font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:11px;}
+
+/* 버튼 */
+.btn{border:1px solid var(--border-strong);background:#fff;color:var(--text-2);padding:7px 13px;border-radius:var(--r);font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.btn:hover{border-color:var(--brand);color:var(--brand);}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600;}
+.btn.primary:hover{background:var(--brand-strong);color:#fff;}
+.btn.ghost{border-color:transparent;background:transparent;}
+.btn.sm{padding:5px 10px;font-size:11.5px;}
+.btn.xs{padding:3px 8px;font-size:11px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* 테이블 */
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:auto;background:#fff;}
+table.data{font-size:12.5px;}
+table.data th{background:var(--surface-2);color:var(--text-2);font-weight:600;font-size:11.5px;text-align:left;padding:9px 11px;border-bottom:1px solid var(--border);white-space:nowrap;}
+table.data td{padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap;}
+table.data tr:last-child td{border-bottom:none;}
+table.data tbody tr:hover td{background:var(--surface-2);}
+table.data td.num,table.data th.num{text-align:right;}
+table.data td.num{font-variant-numeric:tabular-nums;}
+table.data .lnk{color:var(--brand);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+table.data .muted{color:var(--text-3);}
+.empty-row td{text-align:center!important;color:var(--text-3);padding:26px 10px!important;}
+
+/* 상태 pill — 색 + 글자 (캡처 재현) */
+.st{font-size:10.5px;font-weight:700;padding:2px 10px;border-radius:20px;white-space:nowrap;display:inline-block;color:#fff;}
+.st-req{background:var(--s-req);} .st-ctr{background:var(--s-ctr);} .st-run{background:var(--s-run);}
+.st-done{background:var(--s-done);} .st-kill{background:var(--s-kill);} .st-hold{background:#fff;color:var(--s-hold);border:1px solid var(--s-hold);}
+.st-o{background:var(--keep-bg);color:var(--keep);border:1px solid #bfe3d0;}
+.st-x{background:var(--p2-bg);color:var(--text-3);border:1px solid var(--border-strong);}
+.st-m{background:var(--p1-bg);color:var(--p1);border:1px solid #e6c58f;}
+.mono{font-family:'IBM Plex Mono',ui-monospace,'Courier New',monospace;}
+
+/* 조건 영역 */
+.filterbar{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:11px;box-shadow:var(--shadow);}
+.daterange{display:flex;align-items:center;gap:6px;}
+.daterange .ctl{min-width:0;}
+.daterange span{color:var(--text-3);font-size:12px;}
+.fb-act{display:flex;align-items:flex-end;gap:7px;}
+.fb-act .btn{height:33px;}
+.srch{position:relative;}
+.srch .ctl{padding-left:29px;}
+.srch::before{content:'🔍';position:absolute;left:9px;top:8px;font-size:12px;opacity:.5;}
+.rowcnt{font-size:12.5px;color:var(--text-2);margin:0 2px 9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.rowcnt b{color:var(--brand);font-weight:700;}
+.rowcnt .sortnote{color:var(--text-3);font-size:11.5px;}
+
+/* 페이지네이션 */
+.pager{display:flex;justify-content:center;align-items:center;gap:4px;margin-top:14px;}
+.pager button{border:1px solid var(--border);background:#fff;color:var(--text-2);min-width:29px;height:29px;border-radius:6px;font-size:12px;padding:0 6px;}
+.pager button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700;}
+.pager button:disabled{opacity:.4;cursor:not-allowed;}
+
+/* 관리콜 이력 */
+.callrow{display:flex;gap:7px;align-items:center;margin-bottom:7px;}
+.callrow .ctl{min-height:31px;padding:5px 9px;}
+.callrow .d{width:150px;flex:0 0 auto;}
+.hist-box{border:1px solid var(--border);border-radius:var(--r);padding:11px;background:var(--surface-2);}
+.hist-empty{font-size:11.5px;color:var(--text-3);padding:3px 2px 9px;}
+.drop{border:1px dashed var(--border-strong);border-radius:var(--r);padding:12px;background:var(--surface-2);font-size:12px;color:var(--text-3);}
+
+/* 변경이력 */
+.chg{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.chg:last-child{border-bottom:none;}
+.chg .av{width:24px;height:24px;border-radius:50%;background:var(--surface-3);color:var(--text-3);display:flex;align-items:center;justify-content:center;font-size:10px;flex:0 0 auto;}
+.chg .who{font-weight:600;font-size:11.5px;}
+.chg .when{color:var(--text-3);font-size:11px;margin-left:6px;font-weight:400;}
+.chg .what{color:var(--text-2);font-size:12px;}
+
+/* 탭 */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);padding:0 14px;background:#fff;border-radius:12px 12px 0 0;overflow-x:auto;}
+.tab{border:none;background:transparent;padding:11px 13px 9px;font-size:12.5px;color:var(--text-2);border-bottom:2px solid transparent;white-space:nowrap;font-weight:500;}
+.tab.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:700;}
+
+/* 콜아웃 */
+.note{background:var(--brand-bg20);border:1px solid #cfe4ea;border-radius:var(--r-lg);padding:10px 14px;font-size:12px;color:var(--brand-strong);margin-bottom:13px;}
+.note.warn{background:var(--tbd-bg);border-color:var(--tbd-border);color:#8a5a1a;}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.chip{border:1px solid var(--border);background:#fff;color:var(--text-2);padding:6px 13px;border-radius:20px;font-size:12px;font-weight:500;}
+.chip.active{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600;}
+
+/* 날개 패널 */
+.ask-panel{position:fixed;top:0;right:0;bottom:0;width:430px;max-width:94vw;background:#fff;border-left:1px solid var(--border);box-shadow:-8px 0 28px rgba(0,0,0,.16);z-index:130;transform:translateX(100%);transition:transform .2s ease;display:flex;flex-direction:column;}
+.ask-panel.show{transform:none;}
+.drawer-h{padding:15px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.drawer-h h3{font-size:15px;}
+.drawer-b{padding:16px 18px;overflow-y:auto;flex:1;}
+.ask-row{border-left:3px solid var(--ask);background:var(--surface-2);border-radius:0 8px 8px 0;padding:9px 12px;margin-bottom:8px;font-size:12px;}
+.ask-row.find{border-left-color:var(--p0);background:var(--p0-bg);}
+.ask-row .ar-top{display:flex;justify-content:space-between;gap:8px;margin-bottom:3px;}
+.ask-row .ar-when{font-size:10.5px;color:var(--text-3);font-weight:700;white-space:nowrap;}
+.ask-row .ar-who{font-size:10.5px;color:var(--text-3);}
+
+/* 모달 */
+.modal-back{position:fixed;inset:0;background:rgba(16,22,30,.46);z-index:120;display:flex;align-items:flex-start;justify-content:center;padding:70px 20px 30px;overflow-y:auto;}
+.modal{background:#fff;border-radius:14px;box-shadow:0 18px 48px rgba(0,0,0,.28);width:100%;max-width:640px;display:flex;flex-direction:column;max-height:calc(100vh - 110px);}
+.modal-h{padding:15px 20px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.modal-h h3{font-size:15px;}
+.modal-b{padding:16px 20px;overflow-y:auto;flex:1;}
+.modal-f{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface-2);border-radius:0 0 14px 14px;}
+
+/* 토스트 */
+.toast-wrap{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{background:#242c36;color:#fff;padding:10px 18px;border-radius:10px;font-size:12.5px;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:560px;}
+.toast b{color:#7ecfe0;}
+
+/* As-Is 좌측 나열형 (캡처 재현) */
+.asis{display:grid;grid-template-columns:300px 1fr;gap:12px;align-items:start;}
+.asis-col{border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;overflow:hidden;}
+.asis-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 13px;border-bottom:1px solid var(--border);}
+.asis-hd b{font-size:13px;}
+.asis-srch{padding:10px 13px;border-bottom:1px solid var(--border);}
+.asis-li{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:none;border-bottom:1px solid var(--border);background:transparent;padding:11px 13px;}
+.asis-li:hover{background:var(--surface-2);}
+.asis-li.on{background:var(--brand-bg20);box-shadow:inset 3px 0 0 var(--brand);}
+.asis-li .t{flex:1;min-width:0;}
+.asis-li .t b{display:block;font-size:12.5px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.asis-li .t small{display:block;color:var(--text-3);font-size:11px;margin-top:2px;}
+.scene{display:none;}
+.scene.active{display:block;}
+</style>
+</head>
+<body>
+
+<div class="mockbar">
+  <div class="mb-title">CRM 영업관리 목업 <small>v1.0 · 2026-08-26</small></div>
+  <div class="sp"></div>
+  <div class="scene-tabs" id="sceneTabs">
+    <button class="active" onclick="setScene(1)">① 영업이력 등록</button>
+    <button onclick="setScene(2)">② 영업이력 목록</button>
+    <button onclick="setScene(3)">③ 인바운드</button>
+    <button onclick="setScene(4)">④ 계약 상세</button>
+    <button onclick="setScene(5)">⑤ 계약 목록</button>
+  </div>
+  <button class="mb-btn" onclick="toggleAsk()">확인 필요<span class="cnt" id="askCnt">0</span></button>
+  <button class="mb-btn" onclick="resetAll()">↻ 리셋</button>
+</div>
+
+<div class="poc-bar">
+  <b>목업 — 실제로 저장되지 않습니다.</b>
+  <span class="sep">|</span><span><span class="bdg b-new">신규</span> 새로 생기는 항목</span>
+  <span class="sep">|</span><span><span class="bdg b-ask">확인 필요</span> 아직 정해지지 않음</span>
+  <span class="sep">|</span><span><span class="bdg b-cur">현행</span> 지금 도구에 이미 있는 것</span>
+  <span class="sep">|</span><span>인명·연락처·단지명은 전부 가공 데이터</span>
+</div>
+
+<div class="gnb">
+  <div class="brand">
+    <button class="ham" onclick="navClick()">☰</button>
+    <span class="lg">APTNERS<small>APARTNERS</small></span>
+  </div>
+  <div class="c">
+    <button class="gbtn" onclick="toast('알림톡 발송 화면은 목업 범위 밖입니다')">✈ 알림톡 발송</button>
+    <button class="gbtn" onclick="setScene(3)">＋ 인바운드 등록</button>
+    <input class="telin" placeholder="전화번호 입력">
+    <button class="gbtn tel" onclick="toast('수신 대기 상태입니다 <b>(목업)</b>')">📞 받기/걸기</button>
+    <button class="gbtn off">전환</button>
+  </div>
+  <div class="r">
+    <button class="gbtn wait">◈ 전화 대기중</button>
+    <span class="me">홍길동(운영-콜) ▾</span>
+  </div>
+</div>
+
+<div class="app">
+  <nav class="lnb" id="lnb"></nav>
+  <main class="main">
+    <div class="crumb" id="crumb"></div>
+    <div id="sceneHost"></div>
+  </main>
+</div>
+
+<div class="ask-panel" id="askPanel">
+  <div class="drawer-h"><h3>확인 필요 · 캡처 대조 결과</h3><button class="btn ghost" onclick="toggleAsk()">✕</button></div>
+  <div class="drawer-b" id="askBody"></div>
+</div>
+
+<div id="modalHost"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* =========================================================
+   상태 — JS 메모리. 스토리지 API 미사용
+   ========================================================= */
+let SCENE=1, PG_S=1, PG_C=1;
+const PAGE=10;
+
+const OPT={
+  actType:['의뢰방문','발굴영업','교육DB','계약방문','만료고객방문','입대의 브리핑','모임·행사','기타방문','전화상담'],
+  promo:['해당없음','1차','2차'],
+  prob:['높음','보통','낮음'],
+  noGo:['해당 없음','검토시기 미도래','금액 이슈','자체 수립','타 업체 진행','기타'],
+  salesState:['영업활동','견적제안','계약완료','미진행'],
+  region:['서울','경기','인천','광주','대전','부산','대구','울산','강원','충청','전라','경상','제주'],
+  sigungu:['강남구','서초구','수원시','성남시','광산구','서구','유성구','해운대구','목포시','기타'],
+  salesProduct:['AFMS_월납','AFMS_일시납','장수계_월납','장수계_일시납','건관계P_월납','도면제작','시설관리B','기타'],
+  owner:['홍길동','임꺽정','성춘향'],
+  ctrState:['의뢰','계약','진행','완료(만료)','파기','보류'],
+  ctrProductName:['월납 재계약(도면O)','월납 신규','월납선납 재계약','일시납 신규','일시납 재계약','도면제작','시설관리B'],
+  ctrProduct:['월납','월납선납','일시납','도면제작','시설관리'],
+  partner:['아파트너스','이지스','더아파트'],
+  pay:['선납','후납','분납'],
+  renew:['신규계약','재계약'],
+  drawType:['월납','일시납','해당없음'],
+  drawWork:['작업 O','작업 X'],
+  inflow:['검색','문자·카카오','팩스','내부 채널','외부 채널','교육·제휴교육','추천·기존 고객'],
+  custType:['신규','기존-이동','기존-유지','재계약'],
+  taxState:['미발행','발행','발행취소'],
+  prio:['긴급','높음','보통','낮음'],
+  reqType:['정기조정 문의','장기수선계획 문의','도면 제작 문의','시설관리 문의','견적 요청','기타 문의'],
+  dept:['고지파트','상담파트','기술파트'],
+  inState:['접수','진행중','보류','처리완료'],
+};
+
+const APT_MASTER=['새빛 1단지','새빛 2단지','푸른숲 아파트','행복마을 1단지','행복마을 2단지','한빛 아파트','별빛 3단지','솔누리 아파트','미래로 1단지','너울숲 아파트','한들물빛 센트럴 2단지'];
+
+/* ---- ① 폼 (필드 순서는 현행 영업활동 도구 캡처를 따름) ---- */
+const SEED_FORM=()=>({
+  state:'영업활동',
+  actDate:'2026-08-26', actTime:'11:00', ctrDate:'',
+  region:'전라', sigungu:'목포시', apt:'', aptMode:'search',
+  cust:'소장님', phone:'010-0000-0000', keyman:'',
+  actType:'의뢰방문', owner:'홍길동', promo:'해당없음',
+  prob:'보통', probWhy:'', noGo:'해당 없음', noGoDetail:'',
+  callDate:'', calls:[{d:'2026-08-20',t:'1차 통화 — 견적 안내, 입대의 일정 확인 요청'}],
+  product:'AFMS_월납', amt:1332000, vat:133200, memo:'', 
+  chg:[
+    {who:'홍길동',when:'2026-08-26 09:58',what:'[최초 등록]'},
+  ],
+});
+let F=SEED_FORM();
+
+const SEED_SALES=()=>([
+ {date:'2026-08-24',type:'의뢰방문',owner:'홍길동',region:'광주',apt:'새빛 1단지',cust:'소장님',prob:'높음',call:'2026-08-27',amt:8400000,promo:'1차'},
+ {date:'2026-08-21',type:'발굴영업',owner:'임꺽정',region:'경기',apt:'푸른숲 아파트',cust:'소장님',prob:'보통',call:'2026-08-28',amt:6200000,promo:'해당없음'},
+ {date:'2026-08-20',type:'전화상담',owner:'성춘향',region:'서울',apt:'행복마을 2단지',cust:'경리주임',prob:'낮음',call:'2026-09-02',amt:0,promo:'1차'},
+ {date:'2026-08-19',type:'모임·행사',owner:'홍길동',region:'광주',apt:'광주 관리소장 정기모임',cust:'모임 총무',prob:'보통',call:'2026-09-04',amt:0,promo:'해당없음'},
+ {date:'2026-08-18',type:'계약방문',owner:'임꺽정',region:'경기',apt:'한빛 아파트',cust:'소장님',prob:'높음',call:'2026-09-05',amt:12800000,promo:'1차'},
+ {date:'2026-08-14',type:'만료고객방문',owner:'성춘향',region:'부산',apt:'별빛 3단지',cust:'소장님',prob:'보통',call:'2026-09-08',amt:5400000,promo:'해당없음'},
+ {date:'2026-08-13',type:'교육DB',owner:'홍길동',region:'대전',apt:'솔누리 아파트',cust:'소장님',prob:'낮음',call:'2026-09-10',amt:0,promo:'1차'},
+ {date:'2026-08-11',type:'입대의 브리핑',owner:'임꺽정',region:'서울',apt:'미래로 1단지',cust:'입대의 회장',prob:'높음',call:'2026-09-11',amt:15600000,promo:'해당없음'},
+ {date:'2026-08-07',type:'기타방문',owner:'성춘향',region:'경기',apt:'○○관리 주식회사',cust:'담당 과장',prob:'낮음',call:'2026-09-16',amt:0,promo:'해당없음'},
+]);
+let SALES=SEED_SALES();
+
+const SEED_CTR=()=>([
+ {name:'새빛 1단지 계약명',apt:'새빛 1단지',state:'의뢰',product:'월납',partner:'아파트너스',cd:'2026-09-02',ed:'2029-09-01',amt:8400000,owner:'홍길동',promo:'1차'},
+ {name:'푸른숲 아파트 계약명',apt:'푸른숲 아파트',state:'계약',product:'월납',partner:'아파트너스',cd:'2026-09-05',ed:'2029-09-04',amt:6200000,owner:'임꺽정',promo:'1차'},
+ {name:'행복마을 2단지 계약명',apt:'행복마을 2단지',state:'진행',product:'도면제작',partner:'더아파트',cd:'2026-08-28',ed:'2027-02-27',amt:3100000,owner:'',promo:'해당없음'},
+ {name:'한빛 아파트 계약명',apt:'한빛 아파트',state:'완료(만료)',product:'일시납',partner:'아파트너스',cd:'2026-07-14',ed:'2029-07-13',amt:12800000,owner:'임꺽정',promo:'해당없음'},
+ {name:'별빛 3단지 계약명',apt:'별빛 3단지',state:'보류',product:'시설관리',partner:'이지스',cd:'2026-08-19',ed:'2027-08-18',amt:5400000,owner:'성춘향',promo:'해당없음'},
+ {name:'솔누리 아파트 계약명',apt:'솔누리 아파트',state:'파기',product:'월납',partner:'아파트너스',cd:'2026-06-30',ed:'2029-06-29',amt:7300000,owner:'홍길동',promo:'해당없음'},
+ {name:'미래로 1단지 계약명',apt:'미래로 1단지',state:'계약',product:'일시납',partner:'아파트너스',cd:'2026-09-12',ed:'2029-09-11',amt:15600000,owner:'임꺽정',promo:'1차'},
+ {name:'너울숲 아파트 계약명',apt:'너울숲 아파트',state:'의뢰',product:'도면제작',partner:'더아파트',cd:'2026-09-15',ed:'2027-03-14',amt:2800000,owner:'',promo:'1차'},
+ {name:'새빛 2단지 계약명',apt:'새빛 2단지',state:'진행',product:'월납',partner:'아파트너스',cd:'2026-10-06',ed:'2029-10-05',amt:9100000,owner:'성춘향',promo:'2차'},
+ {name:'행복마을 1단지 계약명',apt:'행복마을 1단지',state:'완료(만료)',product:'시설관리',partner:'이지스',cd:'2026-05-11',ed:'2027-05-10',amt:4600000,owner:'홍길동',promo:'해당없음'},
+ {name:'한들물빛 센트럴 2단지 계약명',apt:'한들물빛 센트럴 2단지',state:'보류',product:'월납선납',partner:'아파트너스',cd:'2026-10-13',ed:'2027-10-12',amt:5200000,owner:'',promo:'2차'},
+ {name:'한빛 아파트 도면 계약명',apt:'한빛 아파트',state:'진행',product:'도면제작',partner:'더아파트',cd:'2026-07-28',ed:'2027-01-27',amt:2400000,owner:'임꺽정',promo:'해당없음'},
+ {name:'별빛 3단지 신규 계약명',apt:'별빛 3단지',state:'의뢰',product:'월납',partner:'아파트너스',cd:'2026-10-20',ed:'2029-10-19',amt:8800000,owner:'성춘향',promo:'2차'},
+ {name:'미래로 1단지 시설 계약명',apt:'미래로 1단지',state:'파기',product:'시설관리',partner:'이지스',cd:'2026-04-08',ed:'2027-04-07',amt:3900000,owner:'',promo:'해당없음'},
+]);
+let CTR=SEED_CTR();
+
+let SF={from:'',to:'',type:'전체',owner:'전체',region:'전체',prob:'전체',promo:'전체',q:''};
+let CF={state:'전체',product:'전체',partner:'전체',from:'',to:'',promo:'전체',owner:'전체',q:''};
+let CTR_VIEW='table', CTR_PICK=0, TAB4=0;
+let APT_MODAL=false, APT_Q='';
+
+const SEED_INB=()=>({
+  dept:'고지파트', reqType:'정기조정 문의', prio:'보통', due:'2026-08-28',
+  phone:'010-0000-0000', callback:'010-0000-0000', apt:'새빛 1단지',
+  mgr:'소장님', charge:'홍길동', state:'접수',
+  ask:'장기수선계획 정기조정 비용 문의드립니다. 안내 문자 보고 연락드렸어요.', reply:'',
+  salesOwner:'', promo:'해당없음',
+});
+let IN=SEED_INB();
+
+const SEED_CD=()=>({
+  name:'미래로 1단지 계약명', phone:'010-0000-0000', state:'계약',
+  productName:'월납 재계약(도면O)', product:'월납', partner:'아파트너스', partnerCode:'',
+  pay:'선납', renew:'신규계약', drawType:'월납', drawWork:'작업 O',
+  quote:'2026-09-04', cd:'2026-09-12', ed:'2029-09-11', drawIn:'', visit:'2026-01-01',
+  ceo:'', corp:'', bizNo:'',
+  taxEmail:'', taxState:'미발행', revMonth:'2026-09', revAmt:'', payDate:'',
+  inflow:'검색', custType:'기존-이동',
+  writer:'홍길동', regAt:'2021-11-22 17:29', editor:'임꺽정', editAt:'2026-01-01 17:29',
+  memo:'텍스트\n텍스트\n텍스트\n텍스트',
+  salesOwner:'임꺽정', promo:'1차', promoTouched:false,
+});
+let CD=SEED_CD();
+
+const INB_HIST=[
+ {no:99,type:'정기조정 문의',apt:'미래로 1단지',txt:'2차 정기조정 진행 일정 확인 및 입주자대표회의 일정 조율 요청',at:'2026-12-12 12:12',st:'접수',
+  reply:'처리내용을 입력하는 영역입니다. 인바운드 처리 담당자가 입력한 텍스트 출력',by:'컨설팅팀(콜) | 홍길동',byAt:'2026-12-12 12:12'},
+ {no:98,type:'정기조정 문의',apt:'미래로 1단지',txt:'견적 재발송 요청',at:'2026-11-30 10:04',st:'진행중'},
+ {no:97,type:'정기조정 문의',apt:'미래로 1단지',txt:'도면 작업 범위 문의',at:'2026-11-18 15:22',st:'보류'},
+ {no:96,type:'정기조정 문의',apt:'미래로 1단지',txt:'계약 조건 확인',at:'2026-10-27 09:41',st:'처리완료'},
+ {no:95,type:'정기조정 문의',apt:'미래로 1단지',txt:'최초 문의 접수',at:'2026-10-02 16:08',st:'접수'},
+];
+
+const ASKS=[
+ {k:'find',t:'현행 도구에 「상태」 필드가 있다 — PRD에 없다',s:'변경이력에 [상태 변경] 영업활동 → 견적제안 → 계약완료 가 남아 있다. 목업은 상단 배지로 넣었으나 값 목록이 확인되지 않았다',w:'영업파트',d:'즉시'},
+ {k:'find',t:'현행 도구에 「변경이력」이 이미 있다',s:'PRD는 변경이력을 P1 신규로 잡았는데 현행에 이미 있다. 신규 개발이 아니라 이전 대상일 수 있다',w:'영업·개발',d:'즉시'},
+ {k:'find',t:'계약가능성 현행 값이 「O」다 — 3단계도 5단계도 아니다',s:'캡처의 계약가능성 값은 O 하나뿐이다. 단계 체계 자체가 현행에 없을 수 있다. 목업은 임시 3단계',w:'영업·프로덕트',d:'즉시'},
+ {k:'find',t:'영업활동 일자에 시각이 들어간다',s:'캡처는 2025-12-11(목) 11:00 형식. 날짜만 받을지 시각까지 받을지 정해야 한다',w:'영업파트',d:'8/27'},
+ {k:'find',t:'「키맨」은 현행 도구에 없다',s:'PRD에만 있는 신규 항목이다. 목업은 고객명과 같은 형태로 만들었다',w:'프로덕트',d:'8/27'},
+ {k:'find',t:'현행에 「AI 활동기록 요약」 기능이 있다',s:'CRM으로 옮길 때 함께 가는지 범위 확인 필요',w:'프로덕트·개발',d:'8/27'},
+ {k:'ask',t:'프로모션을 활동유형에 둘지 별도 항목으로 뺄지',s:'목업은 별도 항목. 활동유형에 섞으면 1차·2차가 구분되지 않고 세 화면 값이 어긋난다',w:'영업·프로덕트',d:'즉시'},
+ {k:'ask',t:'VAT 별도인가 포함인가',s:'캡처는 1,332,000 + 133,200 = 1,465,200 — 10% 별도로 보인다. 목업도 별도로 더한다',w:'경영지원',d:'8/27'},
+ {k:'ask',t:'연락처 저장 형식 통일 규칙',s:'세 화면을 맞댈 유일한 키다. 캡처의 현행 도구는 연락처가 비어 있는 건이 있다',w:'개발',d:'8/27'},
+ {k:'ask',t:'프로모션 차수 기본값 자동 지정 여부',s:'목업은 계약일 기준으로 미리 골라두고 바꿀 수 있게 했다',w:'개발·운영',d:'8/27'},
+ {k:'ask',t:'영업관리 화면의 열람 범위',s:'영업이력에 고객 연락처와 매출금액이 들어간다. 기존 민감정보 규칙과 맞춰야 한다',w:'프로덕트·개발',d:'8/27'},
+ {k:'ask',t:'계약상태 「보류」는 캡처에 없다',s:'캡처 배지는 의뢰·계약·진행·완료(만료)·파기 다섯이다. 보류는 지시서에만 있다',w:'개발',d:'8/27'},
+ {k:'ask',t:'인바운드 등록 화면 캡처 미확보',s:'③은 지시서 필드 목록으로 재현했다. 실제 화면과 대조 필요',w:'프로덕트',d:'전달 시'},
+];
+
+/* =========================================================
+   유틸 · 사이드바
+   ========================================================= */
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function won(n){n=Number(n)||0;return n?n.toLocaleString('ko-KR'):'-';}
+function opts(list,cur,extra){let h=extra?`<option${cur===extra?' selected':''}>${esc(extra)}</option>`:'';
+  return h+list.map(v=>`<option${String(cur)===String(v)?' selected':''}>${esc(v)}</option>`).join('');}
+function bNew(){return '<span class="bdg b-new">신규</span>';}
+function bAsk(){return '<span class="bdg b-ask">확인 필요</span>';}
+function bCur(){return '<span class="bdg b-cur">현행</span>';}
+function toast(h){const w=document.getElementById('toastWrap');const e=document.createElement('div');e.className='toast';e.innerHTML=h;w.appendChild(e);
+  setTimeout(()=>{e.style.opacity='0';e.style.transition='opacity .3s';setTimeout(()=>e.remove(),300);},2600);}
+function toggleAsk(){document.getElementById('askPanel').classList.toggle('show');}
+function navClick(){toast('목업 범위 밖 화면입니다');}
+function ctrCls(s){return {'의뢰':'st-req','계약':'st-ctr','진행':'st-run','완료(만료)':'st-done','파기':'st-kill','보류':'st-hold'}[s]||'st-done';}
+function probCls(p){return {'높음':'st-o','보통':'st-m','낮음':'st-x'}[p]||'st-x';}
+function inbCls(s){return {'접수':'st-o','진행중':'st-run','보류':'st-m','처리완료':'st-x'}[s]||'st-x';}
+function promoOf(d){if(!d)return '해당없음';if(d>='2026-09-01'&&d<='2026-09-30')return '1차';if(d>='2026-10-01'&&d<='2026-10-31')return '2차';return '해당없음';}
+function resetAll(){F=SEED_FORM();SALES=SEED_SALES();CTR=SEED_CTR();IN=SEED_INB();CD=SEED_CD();
+  SF={from:'',to:'',type:'전체',owner:'전체',region:'전체',prob:'전체',promo:'전체',q:''};
+  CF={state:'전체',product:'전체',partner:'전체',from:'',to:'',promo:'전체',owner:'전체',q:''};
+  CTR_VIEW='table';CTR_PICK=0;TAB4=0;PG_S=1;PG_C=1;APT_MODAL=false;APT_Q='';
+  setScene(1);toast('초기 상태로 리셋되었습니다');}
+
+const NAV=[
+  {k:'dash',t:'대시보드',ic:'▦'},
+  {k:'prog',t:'진행상황 관리',ic:'▤',dot:1},
+  {k:'sales',t:'영업관리',ic:'◈',sub:[{k:'sales-list',t:'영업이력 목록',isnew:1},{k:'sales-new',t:'영업이력 등록',isnew:1}]},
+  {k:'contract',t:'계약관리',ic:'▣',sub:[{k:'ctr-list',t:'계약관리'},{k:'ctr-sec',t:'보안샘플'}]},
+  {k:'apt',t:'단지관리',ic:'⌂',sub:[{k:'apt-new',t:'단지조회(신)'},{k:'apt-old',t:'단지조회(구)'}]},
+  {k:'user',t:'사용자관리',ic:'☺'},
+  {k:'counsel',t:'통합관리',ic:'✓',dot:1,sub:[{k:'inbound',t:'인바운드',isnew:0}]},
+  {k:'callback',t:'CALL BACK',ic:'☎',dot:1},
+  {k:'rev',t:'매출관리',ic:'₩',sub:[{k:'rev-list',t:'계약 내역 조회'},{k:'tax',t:'세금계산서 관리(TBD)'}]},
+];
+const SCENE_NAV={1:{top:'sales',sub:'sales-new'},2:{top:'sales',sub:'sales-list'},
+ 3:{top:'counsel',sub:'inbound'},4:{top:'contract',sub:'ctr-list'},5:{top:'contract',sub:'ctr-list'}};
+const CRUMB={
+ 1:'영업관리 <b>›</b> 영업이력 목록 <b>›</b> 영업이력 등록',
+ 2:'영업관리 <b>›</b> 영업이력 목록',
+ 3:'통합관리 <b>›</b> 인바운드 <b>›</b> 인바운드 등록',
+ 4:'계약관리 <b>›</b> 계약관리 <b>›</b> 계약상세정보',
+ 5:'계약관리 <b>›</b> 계약관리',
+};
+function renderNav(){
+  const cur=SCENE_NAV[SCENE];let h='';
+  NAV.forEach(n=>{
+    h+=`<button class="lnb-item ${n.k===cur.top?'active':''}" onclick="navClick()">
+      <span class="ic">${n.ic}</span><span>${esc(n.t)}</span>${n.dot?'<span class="dot"></span>':''}
+      ${n.sub?`<span class="ar">${n.k===cur.top?'▲':'▼'}</span>`:''}</button>`;
+    if(n.sub&&n.k===cur.top)n.sub.forEach(s=>{
+      h+=`<button class="lnb-sub ${s.k===cur.sub?'active':''} ${s.isnew?'isnew':''}" onclick="navClick()">· ${esc(s.t)}</button>`;});
+  });
+  document.getElementById('lnb').innerHTML=h;
+  document.getElementById('crumb').innerHTML=CRUMB[SCENE];
+}
+function renderAsk(){
+  document.getElementById('askCnt').textContent=ASKS.length;
+  const finds=ASKS.filter(a=>a.k==='find'), asks=ASKS.filter(a=>a.k!=='find');
+  document.getElementById('askBody').innerHTML=
+   `<div class="note">캡처와 PRD가 어긋난 지점, 그리고 화면에 <span class="bdg b-ask">확인 필요</span> 배지가 붙은 항목입니다.</div>`+
+   `<div style="font-size:11.5px;font-weight:700;color:var(--p0);margin:0 0 8px">캡처에서 새로 확인된 것 ${finds.length}건</div>`+
+   finds.map(a=>`<div class="ask-row find"><div class="ar-top"><b>${esc(a.t)}</b><span class="ar-when">${esc(a.d)}</span></div><div class="ar-who">${esc(a.s)} · 확인 주체 ${esc(a.w)}</div></div>`).join('')+
+   `<div style="font-size:11.5px;font-weight:700;color:var(--ask);margin:16px 0 8px">확인 필요 ${asks.length}건</div>`+
+   asks.map(a=>`<div class="ask-row"><div class="ar-top"><b>${esc(a.t)}</b><span class="ar-when">${esc(a.d)}</span></div><div class="ar-who">${esc(a.s)} · 확인 주체 ${esc(a.w)}</div></div>`).join('');
+}
+function pager(pages,cur,fn){
+  let h=`<button onclick="${fn}(1)" ${cur<=1?'disabled':''}>«</button><button onclick="${fn}(${cur-1})" ${cur<=1?'disabled':''}>‹</button>`;
+  for(let i=1;i<=pages;i++)h+=`<button class="${i===cur?'on':''}" onclick="${fn}(${i})">${i}</button>`;
+  h+=`<button onclick="${fn}(${cur+1})" ${cur>=pages?'disabled':''}>›</button><button onclick="${fn}(${pages})" ${cur>=pages?'disabled':''}>»</button>`;
+  return h;
+}
+
+/* =========================================================
+   ① 영업이력 등록 — 필드 순서는 현행 도구 캡처를 따름
+   ========================================================= */
+function fset(k,v){F[k]=v;}
+function calcSum(){
+  const a=Number(document.getElementById('amtIn').value)||0;
+  const v=Number(document.getElementById('vatIn').value)||0;
+  F.amt=a;F.vat=v;
+  document.getElementById('sumIn').value=(a+v)?won(a+v):'';
+}
+function renderHist(){
+  const b=document.getElementById('histBox');if(!b)return;
+  b.innerHTML=(F.calls.length?F.calls.map((c,i)=>`<div class="callrow">
+      <input type="date" class="ctl d" value="${esc(c.d)}" onchange="F.calls[${i}].d=this.value">
+      <input class="ctl" placeholder="통화 내용" value="${esc(c.t)}" onchange="F.calls[${i}].t=this.value">
+      <button class="btn xs" onclick="delCall(${i})">삭제</button>
+    </div>`).join(''):'<div class="hist-empty">기록된 통화가 없습니다.</div>')
+    +`<button class="btn sm" onclick="addCall()">＋ 줄 추가</button>`;
+}
+function addCall(){F.calls.push({d:'',t:''});renderHist();}
+function delCall(i){F.calls.splice(i,1);renderHist();}
+function setAptMode(m){F.aptMode=m;const el=document.getElementById('aptWrap');if(el)el.innerHTML=aptField();}
+function aptField(){
+  if(F.aptMode==='search'){
+    return `<div class="fld-row">
+      <input class="ctl" id="aptIn" placeholder="검색 버튼으로 단지를 찾습니다" value="${esc(F.apt)}" readonly>
+      <button class="btn" onclick="openApt()">🔍 검색</button>
+      <button class="btn" onclick="setAptMode('manual')">직접 입력</button>
+    </div>
+    <div class="hint">단지 마스터에서 찾습니다. 모임·행사·업체는 목록에 없으므로 직접 입력으로 전환하세요.</div>`;
+  }
+  return `<div class="fld-row">
+      <input class="ctl" id="aptIn" placeholder="모임명 · 행사명 · 업체명을 직접 입력" value="${esc(F.apt)}" oninput="F.apt=this.value">
+      <button class="btn" onclick="setAptMode('search')">검색으로</button>
+    </div>
+    <div class="hint">직접 입력한 값은 단지 마스터와 대조되지 않습니다. 단지라면 검색으로 넣는 편이 좋습니다.</div>`;
+}
+function openApt(){APT_MODAL=true;APT_Q='';renderModal();}
+function closeApt(){APT_MODAL=false;renderModal();}
+function aptSearch(v){APT_Q=v;const b=document.getElementById('aptResult');if(b)b.innerHTML=aptRows();}
+function aptRows(){
+  const q=APT_Q.trim(), list=APT_MASTER.filter(a=>!q||a.includes(q));
+  if(!list.length)return '<tr class="empty-row"><td>검색 결과가 없습니다. 모임·행사라면 직접 입력을 쓰세요.</td></tr>';
+  return list.map(a=>`<tr onclick="pickApt('${a}')" style="cursor:pointer"><td><b>${esc(a)}</b></td></tr>`).join('');
+}
+function pickApt(a){F.apt=a;F.aptMode='search';APT_MODAL=false;renderModal();
+  const w=document.getElementById('aptWrap');if(w)w.innerHTML=aptField();toast(`단지 <b>${esc(a)}</b> 선택`);}
+function renderModal(){
+  const h=document.getElementById('modalHost');
+  if(!APT_MODAL){h.innerHTML='';return;}
+  h.innerHTML=`<div class="modal-back" onclick="if(event.target===this)closeApt()">
+    <div class="modal">
+      <div class="modal-h"><h3>단지 검색</h3><button class="btn ghost" onclick="closeApt()">✕</button></div>
+      <div class="modal-b">
+        <div class="fld" style="margin-bottom:12px"><label>단지명</label>
+          <input class="ctl" id="aptQ" placeholder="단지명 일부를 입력" oninput="aptSearch(this.value)"></div>
+        <div class="tbl-wrap"><table class="data"><thead><tr><th>단지명</th></tr></thead>
+          <tbody id="aptResult">${aptRows()}</tbody></table></div>
+      </div>
+      <div class="modal-f"><button class="btn" onclick="closeApt()">취소</button></div>
+    </div></div>`;
+  const q=document.getElementById('aptQ');if(q)q.focus();
+}
+function saveSales(){
+  if(!F.apt){toast('단지명을 입력해 주세요');return;}
+  F.chg.unshift({who:'홍길동',when:'2026-08-26 14:20',what:`[매출금액 수정] 미지정 -> ${won(F.amt)}`});
+  renderChg();toast('영업이력이 저장되었습니다 <b>(목업 — 실제 저장 없음)</b>');
+}
+function renderChg(){
+  const b=document.getElementById('chgBox');if(!b)return;
+  b.innerHTML=F.chg.map(c=>`<div class="chg"><div class="av">◔</div><div>
+    <div class="who">${esc(c.who)}<span class="when">${esc(c.when)}</span></div>
+    <div class="what">${esc(c.what)}</div></div></div>`).join('');
+  const n=document.getElementById('chgCnt');if(n)n.textContent=F.chg.length;
+}
+
+function scene1(){
+  return `
+  <div class="page-h">
+    <div><h2><span class="st st-ctr" style="vertical-align:3px;margin-right:7px">${esc(F.state)}</span>영업이력 등록</h2>
+      <div class="sub">현행 영업활동 도구의 항목·순서를 그대로 옮깁니다 ${bCur()}</div></div>
+    <div class="pill-row">
+      <button class="btn" onclick="setScene(2)">목록으로</button>
+      <button class="btn" onclick="resetAll()">초기화</button>
+      <button class="btn primary" onclick="saveSales()">저장</button>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-b">
+
+    <div class="sec-t">활동 ${bCur()}</div>
+    <div class="grid2">
+      <div class="fld"><label>영업활동 일자 <span class="req">*</span> ${bAsk()}</label>
+        <div class="fld-row">
+          <input type="date" class="ctl" value="${esc(F.actDate)}" onchange="fset('actDate',this.value)">
+          <input type="time" class="ctl" style="max-width:120px" value="${esc(F.actTime)}" onchange="fset('actTime',this.value)">
+        </div>
+        <div class="hint">현행은 <b>2025-12-11(목) 11:00</b> 형식으로 시각까지 받습니다. 날짜만 받을지 미정.</div></div>
+      <div class="fld"><label>계약일자</label>
+        <input type="date" class="ctl" value="${esc(F.ctrDate)}" onchange="fset('ctrDate',this.value)">
+        <div class="hint">계약으로 이어졌을 때만 채웁니다.</div></div>
+    </div>
+
+    <div class="sec-div"></div>
+    <div class="sec-t">대상 ${bCur()}</div>
+    <div class="grid2">
+      <div class="fld"><label>광역시 / 도</label>
+        <select class="ctl" onchange="fset('region',this.value)">${opts(OPT.region,F.region)}</select></div>
+      <div class="fld"><label>시군구</label>
+        <select class="ctl" onchange="fset('sigungu',this.value)">${opts(OPT.sigungu,F.sigungu)}</select></div>
+      <div class="fld span2"><label>단지명 (업체명 / 모임명 / 행사명) <span class="req">*</span></label>
+        <div id="aptWrap">${aptField()}</div></div>
+      <div class="fld"><label>고객명</label>
+        <input class="ctl" placeholder="예: 소장님" value="${esc(F.cust)}" onchange="fset('cust',this.value)"></div>
+      <div class="fld"><label>연락처 ${bAsk()}</label>
+        <input class="ctl mono" value="${esc(F.phone)}" onchange="fset('phone',this.value)">
+        <div class="hint">세 화면을 맞댈 유일한 키입니다. 저장 형식 통일 규칙 미정.</div></div>
+      <div class="fld isnew span2"><label>키맨 ${bNew()}</label>
+        <input class="ctl" placeholder="의사결정에 영향을 주는 사람" value="${esc(F.keyman)}" onchange="fset('keyman',this.value)">
+        <div class="hint">현행 도구에 없는 항목입니다. 고객명과 같은 형태로 만들었습니다.</div></div>
+    </div>
+
+    <div class="sec-div"></div>
+    <div class="sec-t">활동 정보 ${bCur()}</div>
+    <div class="grid2">
+      <div class="fld"><label>활동유형 <span class="req">*</span></label>
+        <select class="ctl" onchange="fset('actType',this.value)">${opts(OPT.actType,F.actType)}</select></div>
+      <div class="fld"><label>영업 담당자 <span class="req">*</span></label>
+        <input class="ctl" value="${esc(F.owner)}" onchange="fset('owner',this.value)">
+        <div class="hint">로그인한 사용자로 채워집니다. 바꿀 수 있습니다.</div></div>
+      <div class="fld isnew"><label>프로모션 차수 ${bNew()} ${bAsk()}</label>
+        <select class="ctl" onchange="fset('promo',this.value)">${opts(OPT.promo,F.promo)}</select>
+        <div class="hint">활동유형에 맡길지 별도 항목으로 둘지 미정 — 목업은 별도 항목으로 두었습니다.</div></div>
+      <div class="fld"><label>상태 ${bCur()} ${bAsk()}</label>
+        <select class="ctl" onchange="fset('state',this.value);render()">${opts(OPT.salesState,F.state)}</select>
+        <div class="hint">현행 변경이력에 <b>[상태 변경] 영업활동 → 견적제안 → 계약완료</b>가 있습니다. 값 목록 확인 필요.</div></div>
+    </div>
+
+    <div class="sec-div"></div>
+    <div class="sec-t">전망 ${bCur()}</div>
+    <div class="grid2">
+      <div class="fld"><label>계약가능성 ${bAsk()}</label>
+        <select class="ctl" onchange="fset('prob',this.value)">${opts(OPT.prob,F.prob)}</select>
+        <div class="hint">현행 값은 <b>O</b> 하나입니다. 3단계인지 5단계인지 정해지지 않아 임시로 3단계를 넣었습니다.</div></div>
+      <div class="fld"><label>계약가능성 사유</label>
+        <input class="ctl" placeholder="그렇게 판단한 근거" value="${esc(F.probWhy)}" onchange="fset('probWhy',this.value)"></div>
+      <div class="fld"><label>계약 미진행 사유</label>
+        <select class="ctl" onchange="fset('noGo',this.value)">${opts(OPT.noGo,F.noGo)}</select></div>
+      <div class="fld"><label>미진행 상세사유</label>
+        <input class="ctl" placeholder="선택한 사유의 구체적 내용" value="${esc(F.noGoDetail)}" onchange="fset('noGoDetail',this.value)"></div>
+    </div>
+
+    <div class="sec-div"></div>
+    <div class="sec-t">관리콜 ${bCur()}</div>
+    <div class="grid2">
+      <div class="fld"><label>관리콜 시행일</label>
+        <input type="date" class="ctl" value="${esc(F.callDate)}" onchange="fset('callDate',this.value)">
+        <div class="hint">목록의 기본 정렬 기준입니다.</div></div>
+      <div class="fld"></div>
+      <div class="fld span2"><label>관리콜 이력</label>
+        <div class="hist-box" id="histBox"></div>
+        <div class="hint">덮어쓰지 않고 줄을 추가합니다.</div></div>
+    </div>
+
+    <div class="sec-div"></div>
+    <div class="sec-t">금액 ${bCur()}</div>
+    <div class="grid3">
+      <div class="fld span3" style="max-width:33%"><label>상품유형</label>
+        <select class="ctl" onchange="fset('product',this.value)">${opts(OPT.salesProduct,F.product)}</select></div>
+      <div class="fld"><label>매출금액</label>
+        <input type="number" class="ctl amt" id="amtIn" placeholder="0" value="${esc(F.amt)}" oninput="calcSum()"></div>
+      <div class="fld"><label>VAT ${bAsk()}</label>
+        <input type="number" class="ctl amt" id="vatIn" placeholder="0" value="${esc(F.vat)}" oninput="calcSum()">
+        <div class="hint">별도인지 포함인지 미정 — 목업은 별도로 더합니다.</div></div>
+      <div class="fld"><label>합계 <span class="bdg b-ro">자동 계산</span></label>
+        <input class="ctl amt calc" id="sumIn" readonly value="">
+        <div class="hint">사람이 고칠 수 없습니다.</div></div>
+    </div>
+
+    <div class="sec-div"></div>
+    <div class="sec-t">내용 ${bCur()}</div>
+    <div class="grid2">
+      <div class="fld span2"><label>활동내역</label>
+        <textarea class="ctl" placeholder="무엇을 하고 왔는지 적습니다" onchange="fset('memo',this.value)">${esc(F.memo)}</textarea></div>
+      <div class="fld span2"><label>관련 첨부파일</label>
+        <div class="drop"><input type="file" multiple class="ctl" style="border:none;background:transparent;padding:0"></div></div>
+    </div>
+
+    <div class="subcard">
+      <div class="st-t">변경이력 <span id="chgCnt">0</span> ${bCur()}</div>
+      <div id="chgBox"></div>
+      <div class="hint" style="margin-top:8px">현행 도구에 이미 있는 기능입니다. PRD는 이를 신규 P1으로 잡고 있어 범위 확인이 필요합니다. ${bAsk()}</div>
+    </div>
+
+  </div></div>`;
+}
+
+/* =========================================================
+   ② 영업이력 목록
+   ========================================================= */
+function sfset(k,v){SF[k]=v;}
+function salesRows(){
+  let r=SALES.slice();
+  if(SF.type!=='전체')r=r.filter(x=>x.type===SF.type);
+  if(SF.owner!=='전체')r=r.filter(x=>x.owner===SF.owner);
+  if(SF.region!=='전체')r=r.filter(x=>x.region===SF.region);
+  if(SF.prob!=='전체')r=r.filter(x=>x.prob===SF.prob);
+  if(SF.promo!=='전체')r=r.filter(x=>x.promo===SF.promo);
+  if(SF.from)r=r.filter(x=>x.date>=SF.from);
+  if(SF.to)r=r.filter(x=>x.date<=SF.to);
+  const q=SF.q.trim();
+  if(q)r=r.filter(x=>(x.apt+x.cust+x.owner).includes(q));
+  r.sort((a,b)=>(a.call||'9999').localeCompare(b.call||'9999'));
+  return r;
+}
+function renderSales(){
+  const all=salesRows(), pages=Math.max(1,Math.ceil(all.length/PAGE));
+  if(PG_S>pages)PG_S=pages;
+  const rows=all.slice((PG_S-1)*PAGE,PG_S*PAGE);
+  document.getElementById('salesCnt').innerHTML=`총 <b>${all.length}</b>건`;
+  document.getElementById('salesBody').innerHTML=rows.length?rows.map((x,i)=>`<tr>
+      <td class="muted">${(PG_S-1)*PAGE+i+1}</td>
+      <td class="mono">${esc(x.date)}</td><td>${esc(x.type)}</td><td>${esc(x.owner)}</td>
+      <td>${esc(x.region)}</td><td><span class="lnk" onclick="setScene(1)">${esc(x.apt)}</span></td>
+      <td>${esc(x.cust)}</td><td><span class="st ${probCls(x.prob)}">${esc(x.prob)}</span></td>
+      <td class="mono">${esc(x.call)}</td><td class="num">${won(x.amt)}</td>
+      <td>${x.promo==='해당없음'?'<span class="muted">-</span>':`<span class="st st-o">${esc(x.promo)}</span>`}</td></tr>`).join('')
+    :'<tr class="empty-row"><td colspan="11">조건에 맞는 영업이력이 없습니다.</td></tr>';
+  document.getElementById('salesPager').innerHTML=pager(pages,PG_S,'goSales');
+}
+function goSales(p){PG_S=p;renderSales();}
+function searchSales(){PG_S=1;renderSales();toast('영업이력을 조회했습니다');}
+function resetSalesFilter(){SF={from:'',to:'',type:'전체',owner:'전체',region:'전체',prob:'전체',promo:'전체',q:''};PG_S=1;render();toast('조건을 초기화했습니다');}
+
+function scene2(){
+  return `
+  <div class="page-h">
+    <div><h2>영업이력 목록</h2><div class="sub">관리콜 시행일이 가까운 순으로 보여줍니다 ${bNew()}</div></div>
+    <div class="pill-row">
+      <button class="btn" onclick="toast('엑셀 파일이 내려받아집니다 <b>(목업)</b> · 연락처·프로모션 차수 포함')">엑셀 다운로드</button>
+      <button class="btn primary" onclick="setScene(1)">＋ 신규 등록</button>
+    </div>
+  </div>
+
+  <div class="filterbar">
+    <div class="grid4">
+      <div class="fld"><label>활동유형</label>
+        <select class="ctl" onchange="sfset('type',this.value)">${opts(OPT.actType,SF.type,'전체')}</select></div>
+      <div class="fld"><label>영업 담당자</label>
+        <select class="ctl" onchange="sfset('owner',this.value)">${opts(OPT.owner,SF.owner,'전체')}</select></div>
+      <div class="fld span2"><label>영업활동 기간</label>
+        <div class="daterange">
+          <input type="date" class="ctl" value="${esc(SF.from)}" onchange="sfset('from',this.value)">
+          <span>~</span>
+          <input type="date" class="ctl" value="${esc(SF.to)}" onchange="sfset('to',this.value)">
+        </div></div>
+      <div class="fld"><label>지역</label>
+        <select class="ctl" onchange="sfset('region',this.value)">${opts(OPT.region,SF.region,'전체')}</select></div>
+      <div class="fld"><label>계약가능성</label>
+        <select class="ctl" onchange="sfset('prob',this.value)">${opts(OPT.prob,SF.prob,'전체')}</select></div>
+      <div class="fld"><label>프로모션 차수 ${bNew()}</label>
+        <select class="ctl" onchange="sfset('promo',this.value)">${opts(OPT.promo,SF.promo,'전체')}</select></div>
+      <div class="fb-act">
+        <div class="fld srch" style="flex:1"><label>통합 검색</label>
+          <input class="ctl" placeholder="단지명, 고객명, 담당자 검색" value="${esc(SF.q)}" onchange="sfset('q',this.value)"></div>
+        <button class="btn" onclick="resetSalesFilter()">초기화</button>
+        <button class="btn primary" onclick="searchSales()">검색</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rowcnt"><span id="salesCnt"></span><span class="sortnote">· 관리콜 시행일이 가까운 순</span></div>
+  <div class="tbl-wrap">
+    <table class="data">
+      <thead><tr>
+        <th>NO</th><th>영업활동 일자</th><th>활동유형</th><th>영업 담당자</th><th>지역</th>
+        <th>단지명</th><th>고객명</th><th>계약가능성</th><th>관리콜 시행일</th><th class="num">매출금액</th><th>프로모션</th>
+      </tr></thead>
+      <tbody id="salesBody"></tbody>
+    </table>
+  </div>
+  <div class="pager" id="salesPager"></div>`;
+}
+
+/* =========================================================
+   ③ 인바운드 등록 — 캡처 미확보, 지시서 필드 목록으로 재현
+   ========================================================= */
+function inset(k,v){IN[k]=v;}
+function scene3(){
+  return `
+  <div class="page-h">
+    <div><h2>인바운드 등록</h2><div class="sub">현행 화면에 항목 두 개만 더합니다</div></div>
+    <div class="pill-row">
+      <button class="btn" onclick="toast('목록으로 이동합니다 (목업 범위 밖)')">목록</button>
+      <button class="btn primary" onclick="toast('인바운드가 저장되었습니다 <b>(목업 — 실제 저장 없음)</b>')">저장</button>
+    </div>
+  </div>
+
+  <div class="note warn">이 화면은 <b>현행 캡처를 받지 못해</b> 지시서에 적힌 항목 목록으로 재현했습니다. 실제 화면과 대조가 필요합니다. ${bAsk()}</div>
+
+  <div class="card">
+    <div class="card-h"><h3>인바운드 정보</h3><span class="st ${inbCls(IN.state)}">${esc(IN.state)}</span></div>
+    <div class="card-b">
+      <div class="grid3">
+        <div class="fld"><label>인바운드 처리 부서 <span class="req">*</span></label>
+          <select class="ctl" onchange="inset('dept',this.value)">${opts(OPT.dept,IN.dept)}</select></div>
+        <div class="fld"><label>요청유형 <span class="req">*</span></label>
+          <select class="ctl" onchange="inset('reqType',this.value)">${opts(OPT.reqType,IN.reqType)}</select></div>
+        <div class="fld"><label>우선순위</label>
+          <select class="ctl" onchange="inset('prio',this.value)">${opts(OPT.prio,IN.prio)}</select></div>
+        <div class="fld"><label>처리예정일</label>
+          <input type="date" class="ctl" value="${esc(IN.due)}" onchange="inset('due',this.value)"></div>
+        <div class="fld"><label>연락처</label>
+          <input class="ctl mono" value="${esc(IN.phone)}" onchange="inset('phone',this.value)"></div>
+        <div class="fld"><label>Call Back 번호</label>
+          <input class="ctl mono" value="${esc(IN.callback)}" onchange="inset('callback',this.value)"></div>
+        <div class="fld"><label>단지명 <span class="req">*</span></label>
+          <input class="ctl" value="${esc(IN.apt)}" disabled></div>
+        <div class="fld"><label>소장 · 담당자</label>
+          <input class="ctl" value="${esc(IN.mgr)}" onchange="inset('mgr',this.value)"></div>
+        <div class="fld"><label>담당자</label>
+          <select class="ctl" onchange="inset('charge',this.value)">${opts(OPT.owner,IN.charge)}</select></div>
+      </div>
+
+      <div class="sec-div"></div>
+      <div class="grid2">
+        <div class="fld isnew"><label>영업 담당자 ${bNew()}</label>
+          <select class="ctl" onchange="inset('salesOwner',this.value)">${opts(OPT.owner,IN.salesOwner,'선택 안 함')}</select>
+          <div class="hint">고객이 언급하거나 상담 중 확인되면 고릅니다. <b>모르면 비워둡니다</b> — 빈 값이 잘못된 값보다 낫습니다.</div></div>
+        <div class="fld isnew"><label>프로모션 여부 ${bNew()}</label>
+          <select class="ctl" onchange="inset('promo',this.value)">${opts(OPT.promo,IN.promo)}</select>
+          <div class="hint">시스템이 판정하지 않습니다. 상담사가 통화 중에 확인해 직접 고릅니다.</div></div>
+      </div>
+
+      <div class="sec-div"></div>
+      <div class="grid2">
+        <div class="fld span2"><label>문의 내용</label>
+          <textarea class="ctl" onchange="inset('ask',this.value)">${esc(IN.ask)}</textarea></div>
+        <div class="fld span2"><label>처리 내용</label>
+          <textarea class="ctl" placeholder="처리 내용을 입력하세요" onchange="inset('reply',this.value)">${esc(IN.reply)}</textarea></div>
+        <div class="fld"><label>상태</label>
+          <select class="ctl" onchange="inset('state',this.value);render()">${opts(OPT.inState,IN.state)}</select></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   ④ 계약 상세 — 캡처 재현 + 항목 2개
+   ========================================================= */
+function cdset(k,v){CD[k]=v;}
+function cdDate(v){
+  CD.cd=v;
+  if(!CD.promoTouched){
+    CD.promo=promoOf(v);
+    const s=document.getElementById('cdPromo');if(s)s.value=CD.promo;
+  }
+  updPromoNote();
+}
+function cdPromo(v){CD.promo=v;CD.promoTouched=true;updPromoNote();}
+function updPromoNote(){
+  const n=document.getElementById('promoNote');if(!n)return;
+  n.innerHTML=CD.promoTouched
+    ? '<b>직접 선택함</b> — 사람이 확인한 값입니다.'
+    : '<b>계약일 기준 자동 선택됨</b> — 다르면 바꾸세요. 9월 문의·10월 계약 건은 기본값이 틀립니다.';
+}
+function scene4(){
+  const TABS=['계약상세정보','단지리스트','인바운드이력','장수계 작업현황','변경내역'];
+  const body = TAB4===0 ? cd0() : (TAB4===2 ? cd2() : `<div class="card-b" style="text-align:center;color:var(--text-3);padding:40px">이번 목업 범위 밖 탭입니다.</div>`);
+  return `
+  <div class="page-h">
+    <div><h2>${esc(CD.name)}</h2><div class="sub">계약관리 › 계약상세정보</div></div>
+    <div class="pill-row">
+      <button class="btn" onclick="setScene(5)">목록으로</button>
+      <button class="btn" onclick="toast('복사/재계약 — 목업 범위 밖')">복사/재계약</button>
+      <button class="btn primary" onclick="toast('계약이 저장되었습니다 <b>(목업 — 실제 저장 없음)</b>')">편집</button>
+    </div>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="tabs">${TABS.map((t,i)=>`<button class="tab ${TAB4===i?'active':''}" onclick="TAB4=${i};render()">${esc(t)}</button>`).join('')}</div>
+    ${body}
+  </div>`;
+}
+function cd0(){
+  return `<div class="card-b">
+    <div class="grid3">
+      <div class="fld span3"><label>계약명 <span class="req">*</span></label>
+        <input class="ctl" value="${esc(CD.name)}" onchange="cdset('name',this.value)"></div>
+      <div class="fld"><label>연락처</label>
+        <input class="ctl mono" value="${esc(CD.phone)}" onchange="cdset('phone',this.value)"></div>
+      <div class="fld"><label>계약상태</label>
+        <select class="ctl" onchange="cdset('state',this.value)">${opts(OPT.ctrState,CD.state)}</select></div>
+      <div class="fld"><label>상품명</label>
+        <select class="ctl" onchange="cdset('productName',this.value)">${opts(OPT.ctrProductName,CD.productName)}</select></div>
+      <div class="fld"><label>상품 구분</label>
+        <select class="ctl" onchange="cdset('product',this.value)">${opts(OPT.ctrProduct,CD.product)}</select></div>
+      <div class="fld"><label>제휴사</label>
+        <select class="ctl" onchange="cdset('partner',this.value)">${opts(OPT.partner,CD.partner)}</select></div>
+      <div class="fld"><label>제휴사 CODE</label>
+        <input class="ctl" value="${esc(CD.partnerCode)}" onchange="cdset('partnerCode',this.value)"></div>
+      <div class="fld"><label>납부 방식</label>
+        <select class="ctl" onchange="cdset('pay',this.value)">${opts(OPT.pay,CD.pay)}</select></div>
+      <div class="fld"><label>재계약 여부</label>
+        <select class="ctl" onchange="cdset('renew',this.value)">${opts(OPT.renew,CD.renew)}</select></div>
+      <div class="fld"><label>도면구분</label>
+        <select class="ctl" onchange="cdset('drawType',this.value)">${opts(OPT.drawType,CD.drawType)}</select></div>
+      <div class="fld"><label>도면작업</label>
+        <select class="ctl" onchange="cdset('drawWork',this.value)">${opts(OPT.drawWork,CD.drawWork)}</select></div>
+      <div class="fld"><label>견적서 발송일</label>
+        <input type="date" class="ctl" value="${esc(CD.quote)}" onchange="cdset('quote',this.value)"></div>
+      <div class="fld"><label>계약일</label>
+        <input type="date" class="ctl" id="cdCd" value="${esc(CD.cd)}" onchange="cdDate(this.value)"></div>
+      <div class="fld"><label>계약종료일</label>
+        <input type="date" class="ctl" value="${esc(CD.ed)}" onchange="cdset('ed',this.value)"></div>
+      <div class="fld"><label>도면도착일</label>
+        <input type="date" class="ctl" value="${esc(CD.drawIn)}" onchange="cdset('drawIn',this.value)"></div>
+      <div class="fld"><label>방문일정</label>
+        <input type="date" class="ctl" value="${esc(CD.visit)}" onchange="cdset('visit',this.value)"></div>
+      <div class="fld"><label>대표자명</label>
+        <input class="ctl" placeholder="대표자명을 입력하세요." value="${esc(CD.ceo)}" onchange="cdset('ceo',this.value)"></div>
+      <div class="fld"><label>법인명</label>
+        <input class="ctl" placeholder="법인명을 입력하세요." value="${esc(CD.corp)}" onchange="cdset('corp',this.value)"></div>
+      <div class="fld"><label>사업자번호</label>
+        <input class="ctl mono" placeholder="사업자번호를 입력하세요." value="${esc(CD.bizNo)}" onchange="cdset('bizNo',this.value)"></div>
+      <div class="fld"><label>세금계산서 이메일</label>
+        <input class="ctl" placeholder="이메일을 입력하세요." value="${esc(CD.taxEmail)}" onchange="cdset('taxEmail',this.value)"></div>
+      <div class="fld"><label>세금계산서 발행</label>
+        <select class="ctl" onchange="cdset('taxState',this.value)">${opts(OPT.taxState,CD.taxState)}</select></div>
+      <div class="fld"><label>매출월</label>
+        <input class="ctl" placeholder="YYYY.MM" value="${esc(CD.revMonth)}" onchange="cdset('revMonth',this.value)"></div>
+      <div class="fld"><label>매출액</label>
+        <input class="ctl amt" placeholder="금액을 입력하세요." value="${esc(CD.revAmt)}" onchange="cdset('revAmt',this.value)"></div>
+      <div class="fld"><label>입금일</label>
+        <input type="date" class="ctl" value="${esc(CD.payDate)}" onchange="cdset('payDate',this.value)"></div>
+      <div class="fld"><label>유입경로</label>
+        <select class="ctl" onchange="cdset('inflow',this.value)">${opts(OPT.inflow,CD.inflow)}</select></div>
+      <div class="fld"><label>고객 구분</label>
+        <select class="ctl" onchange="cdset('custType',this.value)">${opts(OPT.custType,CD.custType)}</select></div>
+      <div class="fld"></div><div class="fld"></div>
+
+      <div class="fld isnew"><label>영업 담당자 ${bNew()}</label>
+        <select class="ctl" onchange="cdset('salesOwner',this.value)">${opts(OPT.owner,CD.salesOwner,'선택 안 함')}</select>
+        <div class="hint">실적 귀속의 정본입니다. 모르면 비워둡니다.</div></div>
+      <div class="fld isnew"><label>프로모션 차수 ${bNew()}</label>
+        <select class="ctl" id="cdPromo" onchange="cdPromo(this.value)">${opts(OPT.promo,CD.promo)}</select>
+        <div class="hint" id="promoNote"></div></div>
+    </div>
+
+    <div class="subcard">
+      <div class="st-t">작성 및 수정 정보 (자동반영)</div>
+      <div class="grid2">
+        <div class="fld"><label>작성자</label><input class="ctl" value="${esc(CD.writer)}" disabled></div>
+        <div class="fld"><label>등록일</label><input class="ctl mono" value="${esc(CD.regAt)}" disabled></div>
+        <div class="fld"><label>수정자</label><input class="ctl" value="${esc(CD.editor)}" disabled></div>
+        <div class="fld"><label>수정일</label><input class="ctl mono" value="${esc(CD.editAt)}" disabled></div>
+      </div>
+    </div>
+
+    <div class="subcard">
+      <div class="st-t">코멘트</div>
+      <textarea class="ctl" style="min-height:90px" onchange="cdset('memo',this.value)">${esc(CD.memo)}</textarea>
+    </div>
+
+    <div style="margin-top:14px">${inbTable()}</div>
+  </div>`;
+}
+function cd2(){return `<div class="card-b">${inbTable()}</div>`;}
+function inbTable(){
+  return `<div class="tbl-wrap"><table class="data">
+    <thead><tr><th style="width:34px"></th><th style="width:60px">No.</th><th>유형</th><th>단지명</th><th>내용</th><th>등록일</th><th>상태</th></tr></thead>
+    <tbody>${INB_HIST.map((h,i)=>`
+      <tr><td>${i===0?'▲':'▼'}</td><td class="muted">${h.no}</td><td>${esc(h.type)}</td><td>${esc(h.apt)}</td>
+        <td style="white-space:normal">${esc(h.txt)}</td><td class="mono">${esc(h.at)}</td>
+        <td><span class="st ${inbCls(h.st)}">${esc(h.st)}</span></td></tr>
+      ${i===0?`<tr><td></td><td colspan="6" style="white-space:normal;background:var(--surface-2)">
+        <div style="color:var(--text-2)">${esc(h.reply)}</div>
+        <div style="text-align:right;font-size:11px;color:var(--text-3);margin-top:6px">${esc(h.by)} · ${esc(h.byAt)}</div></td></tr>`:''}
+    `).join('')}</tbody></table></div>`;
+}
+
+/* =========================================================
+   ⑤ 계약 목록 — 좌측 나열형 → 표 형태 (단지조회(신) 구성)
+   ========================================================= */
+function cfset(k,v){CF[k]=v;}
+function ctrRows(){
+  let r=CTR.map((x,i)=>Object.assign({no:i+1},x));
+  if(CF.state!=='전체')r=r.filter(x=>x.state===CF.state);
+  if(CF.product!=='전체')r=r.filter(x=>x.product===CF.product);
+  if(CF.partner!=='전체')r=r.filter(x=>x.partner===CF.partner);
+  if(CF.promo!=='전체')r=r.filter(x=>x.promo===CF.promo);
+  if(CF.owner!=='전체')r=r.filter(x=>x.owner===CF.owner);
+  if(CF.from)r=r.filter(x=>x.cd>=CF.from);
+  if(CF.to)r=r.filter(x=>x.cd<=CF.to);
+  const q=CF.q.trim();
+  if(q)r=r.filter(x=>(x.name+x.apt).includes(q));
+  return r;
+}
+function renderCtr(){
+  const all=ctrRows(), pages=Math.max(1,Math.ceil(all.length/PAGE));
+  if(PG_C>pages)PG_C=pages;
+  const rows=all.slice((PG_C-1)*PAGE,PG_C*PAGE);
+  const c=document.getElementById('ctrCnt');if(c)c.innerHTML=`총 <b>${all.length}</b>건`;
+  const b=document.getElementById('ctrBody');if(!b)return;
+  b.innerHTML=rows.length?rows.map(x=>`<tr>
+      <td class="muted">${x.no}</td>
+      <td><span class="lnk" onclick="openCtr(${x.no-1})">${esc(x.name)}</span></td>
+      <td>${esc(x.apt)}</td>
+      <td><span class="st ${ctrCls(x.state)}">${esc(x.state)}</span></td>
+      <td>${esc(x.product)}</td><td>${esc(x.partner)}</td>
+      <td class="mono">${esc(x.cd)}</td><td class="mono">${esc(x.ed)}</td>
+      <td class="num">${won(x.amt)}</td>
+      <td>${x.owner?esc(x.owner):'<span class="muted">미지정</span>'}</td>
+      <td>${x.promo==='해당없음'?'<span class="muted">해당없음</span>':`<span class="st st-o">${esc(x.promo)}</span>`}</td></tr>`).join('')
+    :'<tr class="empty-row"><td colspan="11">조건에 맞는 계약이 없습니다.</td></tr>';
+  document.getElementById('ctrPager').innerHTML=pager(pages,PG_C,'goCtr');
+}
+function goCtr(p){PG_C=p;renderCtr();}
+function searchCtr(){PG_C=1;renderCtr();toast('계약을 조회했습니다');}
+function resetCtrFilter(){CF={state:'전체',product:'전체',partner:'전체',from:'',to:'',promo:'전체',owner:'전체',q:''};PG_C=1;render();toast('조건을 초기화했습니다');}
+function setCtrView(v){CTR_VIEW=v;render();}
+function openCtr(i){const x=CTR[i];CD=SEED_CD();CD.name=x.name;CD.state=x.state;CD.product=x.product;CD.partner=x.partner;
+  CD.cd=x.cd;CD.ed=x.ed;CD.revAmt=x.amt;CD.salesOwner=x.owner;CD.promo=promoOf(x.cd);CD.promoTouched=false;
+  TAB4=0;setScene(4);}
+function pickAsis(i){CTR_PICK=i;render();}
+
+function scene5(){
+  const isT=CTR_VIEW==='table';
+  return `
+  <div class="page-h">
+    <div><h2>계약관리</h2><div class="sub">좌측 나열형을 표 형태로 바꿉니다 ${bNew()}</div></div>
+    <div class="pill-row">
+      <button class="chip ${!isT?'active':''}" onclick="setCtrView('asis')">현재 — 좌측 나열형</button>
+      <button class="chip ${isT?'active':''}" onclick="setCtrView('table')">개선 — 표 형태</button>
+    </div>
+  </div>
+  ${isT?ctrTable():ctrAsis()}`;
+}
+
+function ctrAsis(){
+  const x=CTR[CTR_PICK];
+  return `
+  <div class="note warn">현재 구조입니다. 한 화면에 <b>여덟 건 남짓</b>만 보이고, 어떤 건인지 알려면 <b>하나씩 눌러봐야</b> 합니다. 상태·금액·날짜를 나란히 놓고 비교할 수 없고, 조건으로 좁힐 수도 없습니다.</div>
+  <div class="asis">
+    <div class="asis-col">
+      <div class="asis-hd"><b>계약관리</b>
+        <span class="pill-row"><button class="btn xs" onclick="navClick()">엑셀 다운로드</button><button class="btn xs primary" onclick="navClick()">신규 등록</button></span></div>
+      <div class="asis-srch"><div class="srch"><input class="ctl" placeholder="이름, 연락처, 이메일로 검색하세요."></div></div>
+      ${CTR.slice(0,8).map((c,i)=>`<button class="asis-li ${i===CTR_PICK?'on':''}" onclick="pickAsis(${i})">
+        <span class="t"><b>계약정보명</b><small>${esc(c.product)} | ${esc(c.partner)}</small></span>
+        <span class="st ${ctrCls(c.state)}">${esc(c.state)}</span></button>`).join('')}
+    </div>
+    <div class="card" style="margin:0"><div class="card-h"><h3>${esc(x.name)}</h3>
+      <span class="st ${ctrCls(x.state)}">${esc(x.state)}</span></div>
+      <div class="card-b"><div class="grid3">
+        <div class="fld"><label>상품 구분</label><input class="ctl" value="${esc(x.product)}" disabled></div>
+        <div class="fld"><label>제휴사</label><input class="ctl" value="${esc(x.partner)}" disabled></div>
+        <div class="fld"><label>계약일</label><input class="ctl mono" value="${esc(x.cd)}" disabled></div>
+        <div class="fld"><label>계약종료일</label><input class="ctl mono" value="${esc(x.ed)}" disabled></div>
+        <div class="fld"><label>매출액</label><input class="ctl amt" value="${won(x.amt)}" disabled></div>
+        <div class="fld"><label>단지명</label><input class="ctl" value="${esc(x.apt)}" disabled></div>
+      </div>
+      <div class="hint" style="margin-top:12px">이 값들을 다른 계약과 비교하려면 좌측에서 다른 건을 눌러 다시 읽어야 합니다.</div>
+      </div></div>
+  </div>`;
+}
+
+function ctrTable(){
+  return `
+  <div class="filterbar">
+    <div class="grid4">
+      <div class="fld"><label>계약상태</label>
+        <select class="ctl" onchange="cfset('state',this.value)">${opts(OPT.ctrState,CF.state,'전체')}</select></div>
+      <div class="fld"><label>상품 구분</label>
+        <select class="ctl" onchange="cfset('product',this.value)">${opts(OPT.ctrProduct,CF.product,'전체')}</select></div>
+      <div class="fld"><label>제휴사</label>
+        <select class="ctl" onchange="cfset('partner',this.value)">${opts(OPT.partner,CF.partner,'전체')}</select></div>
+      <div class="fld"><label>계약시작일 ~ 계약종료일</label>
+        <div class="daterange">
+          <input type="date" class="ctl" value="${esc(CF.from)}" onchange="cfset('from',this.value)">
+          <span>~</span>
+          <input type="date" class="ctl" value="${esc(CF.to)}" onchange="cfset('to',this.value)">
+        </div></div>
+      <div class="fld"><label>프로모션 차수 ${bNew()}</label>
+        <select class="ctl" onchange="cfset('promo',this.value)">${opts(OPT.promo,CF.promo,'전체')}</select></div>
+      <div class="fld"><label>영업 담당자 ${bNew()}</label>
+        <select class="ctl" onchange="cfset('owner',this.value)">${opts(OPT.owner,CF.owner,'전체')}</select></div>
+      <div class="fb-act span2">
+        <div class="fld srch" style="flex:1"><label>통합 검색</label>
+          <input class="ctl" placeholder="계약명, 단지명 검색" value="${esc(CF.q)}" onchange="cfset('q',this.value)"></div>
+        <button class="btn" onclick="resetCtrFilter()">초기화</button>
+        <button class="btn primary" onclick="searchCtr()">검색</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rowcnt"><span id="ctrCnt"></span>
+    <span class="sortnote">· 계약상태를 목록에서 바로 구분할 수 있습니다</span>
+    <span style="flex:1"></span>
+    <button class="btn sm" onclick="toast('엑셀 파일이 내려받아집니다 <b>(목업)</b> · 영업담당자·프로모션 차수·견적서 발송일 포함')">엑셀 다운로드</button>
+    <button class="btn sm primary" onclick="toast('신규 계약 등록 — 목업 범위 밖')">＋ 신규 등록</button>
+  </div>
+  <div class="tbl-wrap">
+    <table class="data">
+      <thead><tr>
+        <th>NO</th><th>계약명</th><th>단지명</th><th>계약상태</th><th>상품 구분</th><th>제휴사</th>
+        <th>계약일</th><th>계약종료일</th><th class="num">매출액</th><th>영업 담당자</th><th>프로모션 차수</th>
+      </tr></thead>
+      <tbody id="ctrBody"></tbody>
+    </table>
+  </div>
+  <div class="pager" id="ctrPager"></div>`;
+}
+
+/* =========================================================
+   렌더
+   ========================================================= */
+function setScene(n){SCENE=n;APT_MODAL=false;
+  document.querySelectorAll('#sceneTabs button').forEach((b,i)=>b.classList.toggle('active',i===n-1));
+  render();}
+function render(){
+  renderNav();renderModal();
+  document.getElementById('sceneHost').innerHTML={1:scene1,2:scene2,3:scene3,4:scene4,5:scene5}[SCENE]();
+  document.getElementById('crumb').innerHTML=CRUMB[SCENE];
+  if(SCENE===1){renderHist();renderChg();calcSum();}
+  if(SCENE===2)renderSales();
+  if(SCENE===4&&TAB4===0)updPromoNote();
+  if(SCENE===5&&CTR_VIEW==='table')renderCtr();
+}
+renderAsk();
+render();
+</script>
+</body>
+</html>
