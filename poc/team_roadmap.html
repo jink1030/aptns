@@ -513,7 +513,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
 <div id="doc-editflag">● 편집 모드. 내용을 클릭해 수정하세요</div>
 
 <div id="doc-restore-banner" role="region" aria-label="자동저장 복구" class="">
-  <div class="msg">자동저장본 (2026. 09. 14. 오전 10:21)이 있습니다. 복구하시겠어요?</div>
+  <div class="msg"><b>자동저장본</b>이 있습니다. 복구하시겠어요?</div>
   <button class="doc-ed-btn primary" id="doc-rb-restore">복구</button>
   <button class="doc-ed-btn" id="doc-rb-ignore" title="이번에만 알림 닫기. 다음에 열면 다시 안내합니다.">무시</button>
   <button class="doc-ed-btn" id="doc-rb-keep-current" title="이전 자동저장본을 현재 본문으로 교체합니다. 파일 저장과는 별개입니다.">무시하고 현재 버전으로 백업 확정</button>
@@ -526,7 +526,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
   </div>
 </div>
 
-<div id="doc-toast" role="status" aria-live="polite" class="">저장되었습니다 · KR1 — 회원 수 (공통).html</div>
+<div id="doc-toast" role="status" aria-live="polite" class=""></div>
 
 <main id="doc-content" contenteditable="false">
 
@@ -1146,12 +1146,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
   <!-- TIMELINE:END -->
 </div>
 
-<footer>
-  아파트너스 프로덕트팀 · 26Q4–27Q4 · v4<br>
-  OKR 탭: v2 확정(1.366배 환산, L3 7,000 상향) · 로드맵 탭: 목적지 역산 5개 마일스톤 · 4개 서비스 파트<br>
-  제품영역 ①~⑤: 대표 제품 구상 가이드 기준 매핑 · 완결형 워크플로우 기능 매핑(제공중/로드맵/열어둔 자리) 포함<br>
-  본 문서는 브라우저에서 직접 수정 가능 — 우측 상단 ✎ 편집 버튼 · 편집기: <a href="https://github.com/tonywjs/html-doc" target="_blank" rel="noopener">html-doc (github.com/tonywjs/html-doc)</a>
-</footer>
+
 
 <script>
 function showTab(name, btn){
@@ -1191,10 +1186,10 @@ function showTab(name, btn){
 })();
 </script>
 
-<!-- GIT-PUBLISH:START — 웹에 배포 모듈 (GitHub API로 현재 문서를 레포에 커밋) -->
+<!-- GIT-PUBLISH:START — 웹에 배포 모듈 v2 (GitHub API 커밋 + 배포 후 자동저장 백업 정리) -->
 <div id="git-publish" contenteditable="false">
-  <span id="gp-status" class="" style="display: block;">배포 중… (커밋 업로드)</span>
-  <button id="gp-btn" type="button" disabled="">🌐 웹에 배포</button>
+  <span id="gp-status"></span>
+  <button id="gp-btn" type="button">🌐 웹에 배포</button>
   <button id="gp-gear" type="button" title="GitHub 토큰 재설정">⚙</button>
 </div>
 <style>
@@ -1209,8 +1204,9 @@ function showTab(name, btn){
 @media print{#git-publish{display:none!important;}}
 </style>
 <script>
-/* ── 웹에 배포: 현재 화면의 문서를 GitHub 레포에 커밋한다.
+/* ── 웹에 배포 v2: 현재 화면의 문서를 GitHub 레포에 커밋한다.
    이전 버전은 git 커밋 이력으로 자동 보존되고, GitHub Pages가 1~10분 내 새 버전을 서빙한다.
+   v2: 배포 성공 시 편집기의 자동저장 백업을 정리한다 → 배포 안 한 수정이 있을 때만 복구 배너가 뜬다.
    토큰은 이 브라우저의 localStorage에만 저장되며 문서에는 절대 포함되지 않는다. ── */
 (function(){
   var CFG={owner:'jink1030',repo:'aptns',branch:'main-/-(root)',path:'poc/team_roadmap.html'};
@@ -1225,6 +1221,14 @@ function showTab(name, btn){
     if(t){t=t.trim();if(t){setTok(t);return t;}}
     return null;
   }
+  function backupKey(){
+    var id=document.body.dataset.docId;
+    return 'docedit:autosave:'+(id||('url:'+location.origin+location.pathname));
+  }
+  function syncBackup(){
+    /* 배포된 내용 = 확정본. 백업을 지워 두면, 이후 '배포 안 한 수정'이 생겼을 때만 복구 배너가 뜬다. */
+    try{localStorage.removeItem(backupKey());}catch(e){}
+  }
   function status(msg,cls){var el=document.getElementById('gp-status');el.textContent=msg;el.className=cls||'';el.style.display=msg?'block':'none';}
   function b64(s){
     var bytes=new TextEncoder().encode(s),bin='';
@@ -1232,15 +1236,22 @@ function showTab(name, btn){
     return btoa(bin);
   }
   function snapshot(){
-    /* 배포본은 항상 OKR 탭이 기본으로 열리도록 정규화한 뒤 직렬화하고, 화면은 원래 탭으로 복원 */
+    /* 배포본 정규화: 기본 탭=OKR, 배포 버튼·상태·토스트는 초기 상태로 직렬화하고, 화면은 원래대로 복원 */
     var curPanel=document.querySelector('.tab-panel.active'),curBtn=document.querySelector('.tab-btn.active');
     var panels=document.querySelectorAll('.tab-panel'),btns=document.querySelectorAll('.tab-btn');
+    var gpS=document.getElementById('gp-status'),gpB=document.getElementById('gp-btn');
+    var keepS={t:gpS.textContent,c:gpS.className,d:gpS.style.display},keepB=gpB.disabled;
+    var toastEl=document.getElementById('doc-toast'),keepToast=toastEl?toastEl.textContent:'';
     panels.forEach(function(p){p.classList.remove('active');});btns.forEach(function(b){b.classList.remove('active');});
     if(panels[0])panels[0].classList.add('active');if(btns[0])btns[0].classList.add('active');
     var tip=document.getElementById('kpi-tip');if(tip)tip.style.display='none';
+    gpS.textContent='';gpS.className='';gpS.style.display='none';gpB.disabled=false;
+    if(toastEl)toastEl.textContent='';
     var html=(window.DocEditor&&window.DocEditor.getHTML)?window.DocEditor.getHTML():('<!DOCTYPE html>\n'+document.documentElement.outerHTML);
     panels.forEach(function(p){p.classList.remove('active');});btns.forEach(function(b){b.classList.remove('active');});
     if(curPanel)curPanel.classList.add('active');if(curBtn)curBtn.classList.add('active');
+    gpS.textContent=keepS.t;gpS.className=keepS.c;gpS.style.display=keepS.d;gpB.disabled=keepB;
+    if(toastEl)toastEl.textContent=keepToast;
     return html;
   }
   function gh(method,url,tok,body){
@@ -1251,6 +1262,7 @@ function showTab(name, btn){
     var tok=getTok()||askTok();
     if(!tok){status('토큰이 없어 배포를 취소했습니다.','err');return;}
     if(!retry && !confirm('현재 화면의 내용을 웹에 배포합니다.\n이전 버전은 GitHub 이력에 자동 보관됩니다. 진행할까요?'))return;
+    var content=b64(snapshot());  /* 상태 표시 전에 스냅샷 생성 — 배포 중 문구가 배포본에 섞이지 않게 */
     btn.disabled=true;status('배포 중… (버전 확인)');
     gh('GET',API+'?ref='+encodeURIComponent(CFG.branch),tok).then(function(r){
       if(r.status===401||r.status===403){clearTok();throw new Error('토큰이 유효하지 않습니다. 다시 시도해 토큰을 재입력해 주세요.');}
@@ -1261,7 +1273,7 @@ function showTab(name, btn){
       status('배포 중… (커밋 업로드)');
       var now=new Date(),pad=function(n){return String(n).padStart(2,'0');};
       var msg='roadmap 웹 배포 '+now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+' '+pad(now.getHours())+':'+pad(now.getMinutes());
-      var body={message:msg,content:b64(snapshot()),branch:CFG.branch};
+      var body={message:msg,content:content,branch:CFG.branch};
       if(cur.sha)body.sha=cur.sha;
       return gh('PUT',API,tok,body);
     }).then(function(r){
@@ -1269,6 +1281,7 @@ function showTab(name, btn){
       if(r.status===401||r.status===403){clearTok();throw new Error('토큰 권한이 부족합니다. Contents: Read and write 권한으로 재발급해 주세요.');}
       if(!(r.status===200||r.status===201))throw new Error('업로드 실패 (HTTP '+r.status+')');
       return r.json().then(function(j){
+        syncBackup();
         var sha=(j.commit&&j.commit.sha)?j.commit.sha.slice(0,7):'';
         status('✅ 배포 완료 (커밋 '+sha+'). 링크 반영까지 1~10분 — 안 바뀌어 보이면 Ctrl+F5(강력 새로고침). 이전 버전은 GitHub 파일 History에 보관됨.','ok');
       });
