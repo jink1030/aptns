@@ -173,6 +173,23 @@ body{font-family:var(--font);background:var(--canvas);color:var(--ink);line-heig
 .bar-stable{border-style:dashed;background:repeating-linear-gradient(-45deg,var(--crm-bg),var(--crm-bg) 8px,#EDF3F9 8px,#EDF3F9 16px);}
 .tl-note{padding:10px 2px 18px;font-size:0.68rem;color:var(--ink-3);line-height:1.6;min-width:1120px;}
 .tl-bar[data-kpi]:hover{box-shadow:0 2px 8px rgba(24,38,58,.18);}
+
+/* ── OKR 실행 Task ── */
+.okr-tasks{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:16px 18px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.okr-tasks>.ot-eyebrow{font-family:var(--mono);font-size:0.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;}
+.ot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.ot-card{border:1px solid var(--rule);border-radius:7px;padding:12px 14px 13px;background:var(--surface-2);border-top:3px solid var(--apt);}
+.ot-card.c2{border-top-color:var(--crm);}
+.ot-card.c3{border-top-color:var(--js);}
+.ot-h{font-size:0.8rem;font-weight:700;color:var(--ink);line-height:1.35;margin-bottom:8px;}
+.ot-list{list-style:none;margin:0;padding:0;}
+.ot-list li{position:relative;padding-left:11px;font-size:0.73rem;color:var(--ink-2);line-height:1.5;margin-bottom:5px;}
+.ot-list li::before{content:"";position:absolute;left:0;top:8px;width:4px;height:4px;border-radius:50%;background:var(--ink-3);}
+.ot-list li:last-child{margin-bottom:0;}
+.ot-target{margin-top:9px;padding:7px 10px;border-radius:5px;font-size:0.72rem;font-weight:600;line-height:1.45;background:var(--apt-bg);color:var(--apt);border:1px solid var(--apt-bd);}
+.ot-target.t2{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-bd);}
+.ot-target.t3{background:var(--js-bg);color:var(--js);border-color:var(--js-bd);}
+@media(max-width:900px){.ot-grid{grid-template-columns:1fr;}}
 #kpi-tip{position:fixed;display:none;z-index:2147483000;max-width:360px;background:#18263A;color:#fff;font-size:0.72rem;line-height:1.55;padding:9px 12px;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.28);pointer-events:none;white-space:pre-line;}
 #kpi-tip::before{content:"KPI 기여 근거";display:block;font-family:var(--mono);font-size:0.56rem;letter-spacing:.1em;text-transform:uppercase;color:#5BC4B8;margin-bottom:4px;}
 @media print{.tl-outer{overflow:visible;}.tl{min-width:unset;}.tl-lane{break-inside:avoid;}#kpi-tip{display:none!important;}}
@@ -559,6 +576,42 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
         <div style="font-family:var(--mono);font-size:0.6rem;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;">Objective</div>
         <div style="font-size:0.95rem;font-weight:600;line-height:1.5;">매월 신규 회원을 모객하여 활성 사용자 파이를 확장한다</div>
         <div style="font-size:0.74rem;color:rgba(255,255,255,.55);margin-top:6px;">매월 8.3% 회원 수 증대 · 활성 사용자율 목표 수준(7,000 상당) 달성</div>
+      </div>
+
+
+      <!-- OKR 실행 Task -->
+      <div class="okr-tasks">
+        <div class="ot-eyebrow">Objective 달성을 위한 실행 Task</div>
+        <div class="ot-grid">
+
+          <div class="ot-card c1">
+            <div class="ot-h">활성 사용자 및 신규회원 증대를 위한 프로모션</div>
+            <ul class="ot-list">
+              <li>이미지 공고문 런칭 및 프로모션 진행</li>
+              <li>블로그, 부산 장기수선교육, 알림톡 발송</li>
+            </ul>
+          </div>
+
+          <div class="ot-card c2">
+            <div class="ot-h">신규기능 런칭</div>
+            <ul class="ot-list">
+              <li>소장님 업무 캘린더 기능 런칭</li>
+              <li>단지 이미지·직인 등록 기능 추가</li>
+              <li>소장님 현장 방문을 통한 주 사용자 인사이트 도출</li>
+              <li>회의 준비자료 초안 제작 기능 추가</li>
+            </ul>
+            <div class="ot-target t2">신규 기능 런칭을 통한 주 기능 1회 이상 사용자 7,000명 목표</div>
+          </div>
+
+          <div class="ot-card c3">
+            <div class="ot-h">아파트케어 UX 개선 착수</div>
+            <ul class="ot-list">
+              <li>40~70대 소장님 사용 환경 기준 개선</li>
+            </ul>
+            <div class="ot-target t3">로그인 전환율 현재 47% → 목표 52%</div>
+          </div>
+
+        </div>
       </div>
 
       <div style="background:var(--surface-2);border:1px solid var(--rule);border-radius:7px;padding:12px 16px;margin-bottom:22px;font-size:0.76rem;color:var(--ink-2);line-height:1.55;">
