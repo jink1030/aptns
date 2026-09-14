@@ -1192,6 +1192,95 @@ function showTab(name, btn){
 })();
 </script>
 
+<!-- GIT-PUBLISH:START — 웹에 배포 모듈 (GitHub API로 현재 문서를 레포에 커밋) -->
+<div id="git-publish" contenteditable="false">
+  <span id="gp-status"></span>
+  <button id="gp-btn" type="button">🌐 웹에 배포</button>
+  <button id="gp-gear" type="button" title="GitHub 토큰 재설정">⚙</button>
+</div>
+<style>
+#git-publish{position:fixed;right:18px;bottom:18px;z-index:2147482000;display:flex;align-items:center;gap:8px;font-family:'IBM Plex Sans KR',system-ui,sans-serif;}
+#gp-btn{background:#18263A;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:0.85rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(24,38,58,.35);letter-spacing:.01em;}
+#gp-btn:hover{background:#0E6E66;}
+#gp-btn:disabled{opacity:.55;cursor:wait;}
+#gp-gear{background:#fff;color:#4A5E72;border:1px solid #D4DCE6;border-radius:8px;padding:9px 10px;font-size:0.8rem;cursor:pointer;}
+#gp-status{max-width:340px;background:#fff;border:1px solid #D4DCE6;border-radius:7px;padding:7px 12px;font-size:0.72rem;line-height:1.5;color:#18263A;box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;}
+#gp-status.ok{border-color:#A8D5CF;color:#0E6E66;}
+#gp-status.err{border-color:#E0A878;color:#B85220;}
+@media print{#git-publish{display:none!important;}}
+</style>
+<script>
+/* ── 웹에 배포: 현재 화면의 문서를 GitHub 레포에 커밋한다.
+   이전 버전은 git 커밋 이력으로 자동 보존되고, GitHub Pages가 1~10분 내 새 버전을 서빙한다.
+   토큰은 이 브라우저의 localStorage에만 저장되며 문서에는 절대 포함되지 않는다. ── */
+(function(){
+  var CFG={owner:'jink1030',repo:'aptns',branch:'main-/-(root)',path:'poc/team_roadmap.html'};
+  var API='https://api.github.com/repos/'+CFG.owner+'/'+CFG.repo+'/contents/'+CFG.path;
+  var KEY='ghpub_token_'+CFG.repo;
+  var memTok=null;
+  function getTok(){try{return localStorage.getItem(KEY)||memTok;}catch(e){return memTok;}}
+  function setTok(t){memTok=t;try{localStorage.setItem(KEY,t);}catch(e){}}
+  function clearTok(){memTok=null;try{localStorage.removeItem(KEY);}catch(e){}}
+  function askTok(){
+    var t=prompt('GitHub 토큰(Personal Access Token)을 붙여넣어 주세요.\n\n최초 1회만 입력하면 이 브라우저에 저장됩니다.\n발급: github.com → Settings → Developer settings → Fine-grained tokens\n(대상 레포: '+CFG.owner+'/'+CFG.repo+', 권한: Contents → Read and write)');
+    if(t){t=t.trim();if(t){setTok(t);return t;}}
+    return null;
+  }
+  function status(msg,cls){var el=document.getElementById('gp-status');el.textContent=msg;el.className=cls||'';el.style.display=msg?'block':'none';}
+  function b64(s){
+    var bytes=new TextEncoder().encode(s),bin='';
+    for(var i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
+    return btoa(bin);
+  }
+  function snapshot(){
+    /* 배포본은 항상 OKR 탭이 기본으로 열리도록 정규화한 뒤 직렬화하고, 화면은 원래 탭으로 복원 */
+    var curPanel=document.querySelector('.tab-panel.active'),curBtn=document.querySelector('.tab-btn.active');
+    var panels=document.querySelectorAll('.tab-panel'),btns=document.querySelectorAll('.tab-btn');
+    panels.forEach(function(p){p.classList.remove('active');});btns.forEach(function(b){b.classList.remove('active');});
+    if(panels[0])panels[0].classList.add('active');if(btns[0])btns[0].classList.add('active');
+    var tip=document.getElementById('kpi-tip');if(tip)tip.style.display='none';
+    var html=(window.DocEditor&&window.DocEditor.getHTML)?window.DocEditor.getHTML():('<!DOCTYPE html>\n'+document.documentElement.outerHTML);
+    panels.forEach(function(p){p.classList.remove('active');});btns.forEach(function(b){b.classList.remove('active');});
+    if(curPanel)curPanel.classList.add('active');if(curBtn)curBtn.classList.add('active');
+    return html;
+  }
+  function gh(method,url,tok,body){
+    return fetch(url,{method:method,headers:{'Authorization':'Bearer '+tok,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body:body?JSON.stringify(body):undefined});
+  }
+  function publish(retry){
+    var btn=document.getElementById('gp-btn');
+    var tok=getTok()||askTok();
+    if(!tok){status('토큰이 없어 배포를 취소했습니다.','err');return;}
+    if(!retry && !confirm('현재 화면의 내용을 웹에 배포합니다.\n이전 버전은 GitHub 이력에 자동 보관됩니다. 진행할까요?'))return;
+    btn.disabled=true;status('배포 중… (버전 확인)');
+    gh('GET',API+'?ref='+encodeURIComponent(CFG.branch),tok).then(function(r){
+      if(r.status===401||r.status===403){clearTok();throw new Error('토큰이 유효하지 않습니다. 다시 시도해 토큰을 재입력해 주세요.');}
+      if(r.status===404)return {sha:undefined};
+      if(!r.ok)throw new Error('버전 확인 실패 (HTTP '+r.status+')');
+      return r.json();
+    }).then(function(cur){
+      status('배포 중… (커밋 업로드)');
+      var now=new Date(),pad=function(n){return String(n).padStart(2,'0');};
+      var msg='roadmap 웹 배포 '+now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+      var body={message:msg,content:b64(snapshot()),branch:CFG.branch};
+      if(cur.sha)body.sha=cur.sha;
+      return gh('PUT',API,tok,body);
+    }).then(function(r){
+      if(r.status===409&&!retry){status('다른 커밋과 충돌 — 최신 버전으로 재시도');return publish(true);}
+      if(r.status===401||r.status===403){clearTok();throw new Error('토큰 권한이 부족합니다. Contents: Read and write 권한으로 재발급해 주세요.');}
+      if(!(r.status===200||r.status===201))throw new Error('업로드 실패 (HTTP '+r.status+')');
+      return r.json().then(function(j){
+        var sha=(j.commit&&j.commit.sha)?j.commit.sha.slice(0,7):'';
+        status('✅ 배포 완료 (커밋 '+sha+'). 링크 반영까지 1~10분 — 안 바뀌어 보이면 Ctrl+F5(강력 새로고침). 이전 버전은 GitHub 파일 History에 보관됨.','ok');
+      });
+    }).catch(function(e){status('⚠ '+e.message,'err');}).finally(function(){btn.disabled=false;});
+  }
+  document.getElementById('gp-btn').addEventListener('click',function(){publish(false);});
+  document.getElementById('gp-gear').addEventListener('click',function(){clearTok();if(askTok())status('토큰을 다시 저장했습니다.','ok');});
+})();
+</script>
+<!-- GIT-PUBLISH:END -->
+
 </main>
 
 <script type="application/json" id="doc-history">[]</script>
