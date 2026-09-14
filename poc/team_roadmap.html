@@ -513,7 +513,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
 <div id="doc-editflag">● 편집 모드. 내용을 클릭해 수정하세요</div>
 
 <div id="doc-restore-banner" role="region" aria-label="자동저장 복구" class="">
-  <div class="msg"><b>자동저장본</b>이 있습니다. 복구하시겠어요?</div>
+  <div class="msg">자동저장본 (2026. 09. 14. 오전 11:19)이 있습니다. 복구하시겠어요?</div>
   <button class="doc-ed-btn primary" id="doc-rb-restore">복구</button>
   <button class="doc-ed-btn" id="doc-rb-ignore" title="이번에만 알림 닫기. 다음에 열면 다시 안내합니다.">무시</button>
   <button class="doc-ed-btn" id="doc-rb-keep-current" title="이전 자동저장본을 현재 본문으로 교체합니다. 파일 저장과는 별개입니다.">무시하고 현재 버전으로 백업 확정</button>
@@ -1180,7 +1180,7 @@ function showTab(name, btn){
 
 <!-- GIT-PUBLISH:START — 웹에 배포 모듈 v2 (GitHub API 커밋 + 배포 후 자동저장 백업 정리) -->
 <div id="git-publish" contenteditable="false">
-  <span id="gp-status"></span>
+  <span id="gp-status" class="" style="display: none;"></span>
   <button id="gp-btn" type="button">🌐 웹에 배포</button>
   <button id="gp-gear" type="button" title="GitHub 토큰 재설정">⚙</button>
 </div>
