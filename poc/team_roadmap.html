@@ -542,7 +542,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
 
 <div id="doc-controls">
   <button class="doc-ed-btn" id="doc-editToggle" title="편집 모드 (Cmd/Ctrl+E)">✎ 편집</button>
-  <button class="doc-ed-btn primary" id="doc-saveBtn" title="최초 저장 시 대상 파일 선택 (Cmd/Ctrl+S)">저장</button>
+  <button class="doc-ed-btn primary" id="doc-saveBtn" title="저장 대상: KR1 — 회원 수 (공통).html (Cmd/Ctrl+S)">저장</button>
   <button class="doc-ed-btn" id="doc-inspectorToggle" aria-expanded="false" aria-controls="doc-inspector">현재 서식</button>
   <button class="doc-ed-btn" id="doc-moreToggle" aria-expanded="false" aria-controls="doc-more-actions">더보기 ▾</button>
   <div id="doc-more-actions">
@@ -573,7 +573,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
     </select>
   </div>
   <div class="doc-ed-g">
-    <button class="doc-ed-eb b active" data-cmd="bold" title="굵게">B</button>
+    <button class="doc-ed-eb b" data-cmd="bold" title="굵게">B</button>
     <button class="doc-ed-eb i" data-cmd="italic" title="기울임">I</button>
     <button class="doc-ed-eb u" data-cmd="underline" title="밑줄">U</button>
     <button class="doc-ed-eb s" data-cmd="strikeThrough" title="취소선">S</button>
@@ -603,13 +603,13 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
   <div class="doc-ed-insp-card">
     <div class="doc-ed-insp-h"><span class="d"></span>현재 서식<button class="doc-ed-btn" id="doc-inspectorClose" aria-label="현재 서식 닫기">닫기</button></div>
     <div class="doc-ed-insp-b">
-      <div class="doc-ed-irow"><span class="doc-ed-ik">단락 스타일</span><span class="doc-ed-iv" id="doc-i-block">표 칸</span></div>
+      <div class="doc-ed-irow"><span class="doc-ed-ik">단락 스타일</span><span class="doc-ed-iv" id="doc-i-block">목록</span></div>
       <div class="doc-ed-irow"><span class="doc-ed-ik">글씨 크기</span><span class="doc-ed-iv" id="doc-i-size">10px</span></div>
       <div class="doc-ed-irow"><span class="doc-ed-ik">글씨체</span><span class="doc-ed-iv" id="doc-i-font">IBM Plex Sans KR</span></div>
-      <div class="doc-ed-irow"><span class="doc-ed-ik">글자색</span><span class="doc-ed-iv"><span class="doc-ed-sw"><i id="doc-i-fore-sw" style="background: rgb(184, 82, 32);"></i><span id="doc-i-fore-tx">#B85220</span></span></span></div>
+      <div class="doc-ed-irow"><span class="doc-ed-ik">글자색</span><span class="doc-ed-iv"><span class="doc-ed-sw"><i id="doc-i-fore-sw" style="background: rgb(74, 94, 114);"></i><span id="doc-i-fore-tx">#4A5E72</span></span></span></div>
       <div class="doc-ed-irow"><span class="doc-ed-ik">배경색</span><span class="doc-ed-iv"><span class="doc-ed-sw"><i id="doc-i-back-sw" style=""></i><span id="doc-i-back-tx">없음</span></span></span></div>
       <div class="doc-ed-irow"><span class="doc-ed-ik">적용된 서식</span><span class="doc-ed-iv"><span class="doc-ed-ichips" id="doc-i-chips">
-        <span class="doc-ed-ichip on" data-st="bold">굵게</span><span class="doc-ed-ichip" data-st="italic">기울임</span>
+        <span class="doc-ed-ichip" data-st="bold">굵게</span><span class="doc-ed-ichip" data-st="italic">기울임</span>
         <span class="doc-ed-ichip" data-st="underline">밑줄</span><span class="doc-ed-ichip" data-st="strikeThrough">취소선</span>
       </span></span></div>
     </div>
@@ -790,12 +790,15 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
 
       <div class="p-sec">
         <div class="p-label"><span class="p-dot" style="background:var(--apt)"></span><span class="p-name">아파트케어</span></div>
-        <div class="p-goal g-apt">모객 → 활성화 전환 착수</div>
+        <div class="p-goal g-apt">신규기능 7종 순차 런칭 → 활성 7,000명</div>
         <ul class="t-list">
-          <li class="t-item"><div class="t-name">이미지 공고문 런칭</div><div class="t-why">단지별 공고문 = 단지 개인화 콘텐츠 진입점</div><span class="t-domain">① 단지 개인화 지식 기반</span></li>
-          <li class="t-item"><div class="t-name">번호 미인증 회원 인증 취득 진행</div><div class="t-why">장수계·CRM 연동 시 단지 매핑 키 확보</div><span class="t-domain">⑤ 데이터 축적과 기억</span></li>
-          <li class="t-item"><div class="t-name">소장님 현장 방문·인터뷰</div><div class="t-why">도메인 인사이트 = 완결형 업무 설계 입력값</div></li>
-          <li class="t-item"><div class="t-name">활성화 퍼널 정의(접속→로그인→기능 1개+)</div><div class="t-why">활성 사용자율 측정 기준 확정</div></li>
+          <li class="t-item"><div class="t-name">0. 이미지 공고문 런칭 (9/11 완료)</div><div class="t-why">진입점 · 개인화 콘텐츠 시작</div><span class="t-domain">① 단지 개인화 지식 기반</span></li>
+          <li class="t-item"><div class="t-name">1. 단지 이미지·직인 등록 (9/29)</div><div class="t-why">락인(이탈비용↑) · 공고문 사용빈도↑</div><span class="t-domain">⑤ 데이터 축적과 기억</span></li>
+          <li class="t-item"><div class="t-name">2. 번호 인증 &amp; 단지 매핑 (9/29)</div><div class="t-why">★11월 재유입 대상 확보 (최대 레버 선행)</div><span class="t-domain">⑤ 데이터 축적과 기억</span></li>
+          <li class="t-item"><div class="t-name">3. 캘린더 런칭 (10/22)</div><div class="t-why">월례 업무 = 매월 재방문 트리거</div><span class="t-domain">④ 완결형 워크플로우</span></li>
+          <li class="t-item"><div class="t-name">4. 단지 개인화 채팅 (11/5)</div><div class="t-why">맞춤응답 = 범용 LLM 대체불가 + 재유입 후크</div><span class="t-domain">① 단지 개인화 지식 기반</span></li>
+          <li class="t-item"><div class="t-name">5. 회의 자료 자동 작성 (12/3)</div><div class="t-why">회의 준비→녹음→회의록 사이클 진입점</div><span class="t-domain">③ 업무 완결 운영체계</span></li>
+          <li class="t-item"><div class="t-name">6. 민원일지 등록 (12/24)</div><div class="t-why">락인 + 베타 소장님 직접 요청(검증된 니즈)</div><span class="t-domain">⑤ 데이터 축적과 기억</span></li>
         </ul>
       </div>
 
@@ -840,11 +843,11 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
       <div class="p-sec">
         <div class="p-label"><span class="p-dot" style="background:var(--apt)"></span><span class="p-name">아파트케어</span></div>
         <div class="p-goal g-apt">문서 이해 · RiskCare 확장</div>
-        <div class="prereq">26Q4 현장 인사이트·인증 구조 필요</div>
+        <div class="prereq">26Q4 번호 인증·개인화 채팅(11/5) 기반 필요</div>
         <ul class="t-list">
           <li class="t-item"><div class="t-name">문서 자동 분류·보관(문서함) 착수</div><div class="t-why">직접 입력 부담 제거 = 진입장벽↓ 활성↑</div><span class="t-domain">③ 업무 완결 운영체계</span></li>
           <li class="t-item"><div class="t-name">RiskCare 주제 확장(사업자선정→행정·회계 등)</div><div class="t-why">엔진 커버리지 = 재방문·업무 발생 트리거</div><span class="t-domain">② RiskCare 엔진</span></li>
-          <li class="t-item"><div class="t-name">단지 개인화 채팅 기능 제공</div><div class="t-why">타 LLM과 차별성 = 이탈 방지</div><span class="t-domain">① 단지 개인화 지식 기반</span></li>
+          <li class="t-item"><div class="t-name">장수계 채팅 연동 → 대시보드 개선</div><div class="t-why">26Q4 개인화 채팅에 장수계 데이터 연결 = 유료 가치 선행 검증</div><span class="t-domain">⑤ 데이터 축적과 기억</span></li>
         </ul>
       </div>
 
@@ -1112,7 +1115,6 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
         <span class="lg"><span class="sw sw-now"></span>제공중 — 현재 아파트케어 기능</span>
         <span class="lg"><span class="sw sw-road"></span>로드맵 — 해당 분기 제공 예정</span>
         <span class="lg"><span class="sw sw-core"></span>첫 완결형 업무</span>
-        <span class="lg"><span class="sw sw-new"></span>열어둔 자리 — 미확정 후보</span>
       </div>
       <div class="wf-grid">
         <div class="wf-card">
@@ -1133,7 +1135,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
             <span class="wf-fn fn-now">제공중 · AI비서 (법정점검·안전 질의)</span>
             <span class="wf-fn fn-road">27Q1 · 문서함 (점검 보고서 보관)</span>
             <span class="wf-fn fn-road">27Q2 · 시설관리 디지털화+위험성평가</span>
-            <span class="wf-fn fn-road">캘린더 — 워크플로우 일정 요소로 내장</span>
+            <span class="wf-fn fn-road">26Q4 · 캘린더 런칭 (10/22)</span>
           </div>
         </div>
         <div class="wf-card">
@@ -1143,6 +1145,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
             <span class="wf-fn fn-now">제공중 · 회의록</span>
             <span class="wf-fn fn-now">제공중 · AI비서 (규약·계약 검토 질의)</span>
             <span class="wf-fn fn-road">26Q4 · 이미지 공고문 런칭</span>
+            <span class="wf-fn fn-road">26Q4 · 회의자료 자동 작성 (12/3)</span>
             <span class="wf-fn fn-road">27Q1 · RiskCare 행정·회계 확장</span>
           </div>
         </div>
@@ -1161,7 +1164,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
           <div class="wf-fns">
             <span class="wf-fn fn-now">제공중 · AI비서 (규정 기반 민원 응대 답변)</span>
             <span class="wf-fn fn-road">26Q4 · 이미지 공고문 (공지·안내 제작)</span>
-            <span class="wf-fn fn-new">열어둔 자리 · 신기능 후보 (미확정)</span>
+            <span class="wf-fn fn-road">26Q4 · 민원일지 등록 (12/24)</span>
           </div>
         </div>
       </div>
@@ -1197,11 +1200,14 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
       <div class="tl-lab"><div class="p-label" style="border:none;padding:0;"><span class="p-dot" style="background:var(--apt)"></span><span class="p-name">아파트케어</span></div><small>모객·활성화 → 완결형 업무 → 유료화 → 락인</small></div>
       <div class="tl-rows">
         <div class="tl-row">
-          <div class="tl-bar bar-apt" style="grid-column:1/span 1;" data-kpi="KPI — 단지별 공고문 = 개인화 진입점 / 인증 = 연동 매핑 키 / 인터뷰 = 완결형 업무 설계 입력값 / 퍼널 = 활성 측정 기준 확정"><b>모객·활성 실측</b>이미지 공고문 런칭 · 번호 미인증 인증 취득 · 현장 방문 인터뷰 · 활성화 퍼널 정의</div>
+          <div class="tl-bar bar-apt" style="grid-column:1/span 1;" data-kpi="KPI — 공고문 = 진입점·개인화 콘텐츠 시작 / 직인 등록 = 락인·공고문 사용빈도↑ / 번호 인증 = ★11월 재유입 대상 확보 / 캘린더 = 월례 재방문 트리거"><b>신규기능 1차 (9~10월)</b>0. 이미지 공고문(9/11) · 1. 단지 이미지·직인 등록(9/29) · 2. 번호 인증&amp;단지 매핑(9/29) · 3. 캘린더(10/22)</div>
           <div class="tl-bar bar-apt cont" style="grid-column:3/span 1;" data-kpi="KPI — 유료 전환 대상군 규모 확정">연동 후 파이·활성률 재측정</div>
         </div>
         <div class="tl-row">
-          <div class="tl-bar bar-apt" style="grid-column:2/span 1;" data-kpi="KPI — 직접 입력 부담 제거 = 진입장벽↓ 활성↑ / 타 LLM과 차별성 = 이탈 방지 (제품영역 ①③)"><b>문서 이해·개인화 ①③</b>문서함(자동 분류·보관) 착수 · 단지 개인화 채팅(노트북LM형) 검증</div>
+          <div class="tl-bar bar-apt" style="grid-column:1/span 1;" data-kpi="KPI — 개인화 채팅 = 범용 LLM 대체불가·재유입 후크 / 회의자료 = 회의 준비→녹음→회의록 사이클 진입점 / 민원일지 = 락인·베타 소장님 검증된 니즈"><b>신규기능 2차 (11~12월)</b>4. 단지 개인화 채팅(11/5) · 5. 회의 자료 자동 작성(12/3) · 6. 민원일지 등록(12/24)</div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-bar bar-apt" style="grid-column:2/span 1;" data-kpi="KPI — 직접 입력 부담 제거 = 진입장벽↓ 활성↑ / 26Q4 개인화 채팅에 장수계 데이터 연결 = 유료 가치 선행 검증 (제품영역 ③⑤)"><b>문서 이해·연동 확장 ③⑤</b>문서함(자동 분류·보관) 착수 · 장수계 채팅 연동→대시보드 개선</div>
           <div class="tl-bar bar-apt cont" style="grid-column:3/span 1;" data-kpi="KPI — &quot;아파트너스 지불보다 아파트케어가 낫다&quot; 인지 = 유료 가치 (제품영역 ①)">장수계 데이터 아파트케어 노출(챗)</div>
         </div>
         <div class="tl-row">
@@ -1418,7 +1424,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
         <td class="c">12/24</td>
         <td class="c">5</td><td class="c">5</td><td class="c">5</td><td class="c">3</td><td class="c">2</td><td class="c">2</td><td class="c tot">22</td>
         <td class="pa">장수계 채팅 연동 → 대시보드</td>
-        <td class="pb"><div class="xpb-t">민원 답변 문구 AI 제안 (규정 근거 자동 첨부)</div>
+        <td class="pb"><div class="xpb-t">민원 답변 문구 AI 제안 (규정 근거 자동 첨부)<span class="pb-new">NEW</span></div>
           <ul class="xpb"><li><b>목적</b>민원일지가 '기록하는 부담'에서 멈추지 않도록, 등록 없이도 바로 쓰는 가치를 먼저 제공해 진입 장벽을 없앤다</li><li><b>목표</b>민원 기능 진입자의 실제 사용(답변 문구 생성) 전환 확보 → 12월 최종 목표 7,000명(43.8%) 미달분 회수</li><li><b>기대효과</b>민원 내용을 넣으면 관리규약·법령 근거를 붙인 답변 초안을 AI가 제시. 소장님이 가장 곤란해하는 '근거 있는 답변'을 대신 써주므로 즉시 체감되고, 기존 AI비서 인프라 재사용이라 추가 공수가 작다. 여기서 오간 민원 내용이 자연스럽게 일지 데이터로 쌓여 원래 기능(락인)으로 되돌아온다</li></ul></td>
       </tr>
       <tr class="xv ok"><td colspan="13"><b>▸ 달성 시</b>26Q4 OKR 마감 성공. 27Q1 장수계 연동·유료화 준비로 연결하고 완료 회고를 진행한다.</td></tr>
