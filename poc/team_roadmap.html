@@ -795,9 +795,9 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
           <li class="t-item"><div class="t-name">0. 이미지 공고문 런칭 (9/11 완료)</div><div class="t-why">진입점 · 개인화 콘텐츠 시작</div><span class="t-domain">① 단지 개인화 지식 기반</span></li>
           <li class="t-item"><div class="t-name">1. 단지 이미지·직인 등록 (9/29)</div><div class="t-why">락인(이탈비용↑) · 공고문 사용빈도↑</div><span class="t-domain">⑤ 데이터 축적과 기억</span></li>
           <li class="t-item"><div class="t-name">2. 번호 인증 &amp; 단지 매핑 (9/29)</div><div class="t-why">★11월 재유입 대상 확보 (최대 레버 선행)</div><span class="t-domain">⑤ 데이터 축적과 기억</span></li>
-          <li class="t-item"><div class="t-name">3. 캘린더 런칭 (10/22)</div><div class="t-why">월례 업무 = 매월 재방문 트리거</div><span class="t-domain">④ 완결형 워크플로우</span></li>
+          <li class="t-item"><div class="t-name">3. 캘린더 = AI 허브 (10/15 빌드→10/22 런칭)</div><div class="t-why">RiskCare 선제감지→자동등록→업무 연결 = 전 기능 진입 허브</div><span class="t-domain">④ 완결형 워크플로우</span></li>
           <li class="t-item"><div class="t-name">4. 단지 개인화 채팅 (11/5)</div><div class="t-why">맞춤응답 = 범용 LLM 대체불가 + 재유입 후크</div><span class="t-domain">① 단지 개인화 지식 기반</span></li>
-          <li class="t-item"><div class="t-name">5. 회의 자료 자동 작성 (12/3)</div><div class="t-why">회의 준비→녹음→회의록 사이클 진입점</div><span class="t-domain">③ 업무 완결 운영체계</span></li>
+          <li class="t-item"><div class="t-name">5. 회의 자료 자동 작성 (12/3, 게이트원 재검토)</div><div class="t-why">회의 준비→녹음(STT)→회의록→공고문 사이클 진입점</div><span class="t-domain">③ 업무 완결 운영체계</span></li>
           <li class="t-item"><div class="t-name">6. 민원일지 등록 (12/24)</div><div class="t-why">락인 + 베타 소장님 직접 요청(검증된 니즈)</div><span class="t-domain">⑤ 데이터 축적과 기억</span></li>
         </ul>
       </div>
@@ -1040,6 +1040,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
       <div class="open-item"><span class="o-tag">법무</span><div><b>공공데이터 상업 활용</b> — 공공누리 2단계 저작권. 유권해석 기반 답변·공공데이터 활용 가부 검토 선행.</div></div>
       <div class="open-item"><span class="o-tag">보안</span><div><b>인프라 점검 범위·주기</b> — 서버 접근통제·로그·취약점 스캔 범위와 정기 점검 주기 확정.</div></div>
       <div class="open-item"><span class="o-tag">검증</span><div><b>상시 소장 검증 그룹</b> — 개인 집중형 대신 복수 소장 검증 풀 구성. 운영·영업 키맨 인프라 활용.</div></div>
+      <div class="open-item"><span class="o-tag">리스크</span><div><b>캘린더 법정 일정 오안내</b> — 법정·정기 일정 오안내 시 신뢰 붕괴로 직결. 26Q4는 픽스된 법정 일정만 우선 노출, 유동 항목은 도메인 검증 후 단계적 확대(룰베이스 남발 금지).</div></div>
     </div>
   </div>
   </div>
@@ -1135,7 +1136,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
             <span class="wf-fn fn-now">제공중 · AI비서 (법정점검·안전 질의)</span>
             <span class="wf-fn fn-road">27Q1 · 문서함 (점검 보고서 보관)</span>
             <span class="wf-fn fn-road">27Q2 · 시설관리 디지털화+위험성평가</span>
-            <span class="wf-fn fn-road">26Q4 · 캘린더 런칭 (10/22)</span>
+            <span class="wf-fn fn-road">26Q4 · 캘린더 = AI 허브 (10/15→10/22)</span>
           </div>
         </div>
         <div class="wf-card">
@@ -1145,7 +1146,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
             <span class="wf-fn fn-now">제공중 · 회의록</span>
             <span class="wf-fn fn-now">제공중 · AI비서 (규약·계약 검토 질의)</span>
             <span class="wf-fn fn-road">26Q4 · 이미지 공고문 런칭</span>
-            <span class="wf-fn fn-road">26Q4 · 회의자료 자동 작성 (12/3)</span>
+            <span class="wf-fn fn-road">26Q4 · 회의자료 자동 작성 (12/3, 게이트원 재검토)</span>
             <span class="wf-fn fn-road">27Q1 · RiskCare 행정·회계 확장</span>
           </div>
         </div>
@@ -1169,7 +1170,18 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
         </div>
       </div>
 
-      <div style="margin-top:16px;padding:12px 16px;background:var(--apt-bg);border-left:3px solid var(--apt);border-radius:0 6px 6px 0;font-size:0.78rem;color:var(--ink-2);line-height:1.55;">
+      <div style="margin-top:16px;padding:16px 20px;background:#FDF9EE;border:1px solid #E8D9A8;border-radius:7px;">
+        <div style="font-weight:700;font-size:0.85rem;margin-bottom:8px;">🗓️ 캘린더 = 아파트케어 AI 허브 <span style="font-weight:400;font-size:0.68rem;color:var(--ink-3);">— 260916 대표 리뷰 반영</span></div>
+        <p style="font-size:0.8rem;color:var(--ink-2);line-height:1.6;margin-bottom:8px;">캘린더는 단독 일정 기능이 아니라 <b>아파트케어 전 기능의 진입 허브</b>다. 법정·정기 일정을 <b>RiskCare(AI)가 선제 감지</b>해 캘린더에 자동 등록·알림하고, 상세 진입 시 해당 업무(공고문 작성·개인화 채팅 등)로 바로 연결된다.</p>
+        <p style="font-family:var(--mono);font-size:0.72rem;color:var(--ink-3);background:var(--surface-2);padding:8px 12px;border-radius:5px;margin-bottom:8px;line-height:1.6;">예) 소방점검일 D-30 알림 → 상세 진입 → 「소방점검 공고문 작성」 버튼 → 이미지 공고문 화면</p>
+        <p style="font-size:0.8rem;color:var(--ink-2);line-height:1.6;margin-bottom:10px;"><b>카피 톤</b> — "소장이 일정을 관리한다"가 아니라 <b>"AI가 먼저 알려주는 비서"</b>.</p>
+        <div class="risk-item" style="margin-bottom:0;">
+          <span class="r-num">!</span>
+          <div class="r-text"><strong>리스크</strong> — 법정 일정 오안내 = 신뢰 붕괴 직결. 26Q4는 픽스된 법정 일정만 우선 노출하고, 유동 항목은 도메인 검증 후 단계적으로 연다 (룰베이스 남발 금지 원칙).</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;padding:12px 16px;background:var(--apt-bg);border-left:3px solid var(--apt);border-radius:0 6px 6px 0;font-size:0.78rem;color:var(--ink-2);line-height:1.55;">
         <b style="color:var(--apt);">LTV의 본질</b> — 기능 수가 아니라, 문서·시설·업무·결정·증빙·성과가 같은 단지의 기억으로 연결되고 다음 판단·업무에 다시 쓰이는 구조에서 생긴다. 각 업무가 완결되며 데이터를 남기고, 그 데이터가 다음 주기 진입 비용을 낮추면서 이탈 비용을 높인다.
       </div>
 
@@ -1200,11 +1212,11 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
       <div class="tl-lab"><div class="p-label" style="border:none;padding:0;"><span class="p-dot" style="background:var(--apt)"></span><span class="p-name">아파트케어</span></div><small>모객·활성화 → 완결형 업무 → 유료화 → 락인</small></div>
       <div class="tl-rows">
         <div class="tl-row">
-          <div class="tl-bar bar-apt" style="grid-column:1/span 1;" data-kpi="KPI — 공고문 = 진입점·개인화 콘텐츠 시작 / 직인 등록 = 락인·공고문 사용빈도↑ / 번호 인증 = ★11월 재유입 대상 확보 / 캘린더 = 월례 재방문 트리거"><b>신규기능 1차 (9~10월)</b>0. 이미지 공고문(9/11) · 1. 단지 이미지·직인 등록(9/29) · 2. 번호 인증&amp;단지 매핑(9/29) · 3. 캘린더(10/22)</div>
+          <div class="tl-bar bar-apt" style="grid-column:1/span 1;" data-kpi="KPI — 공고문 = 진입점·개인화 콘텐츠 시작 / 직인 등록 = 락인·공고문 사용빈도↑ / 번호 인증 = ★11월 재유입 대상 확보 / 캘린더 = AI 선제감지→자동등록, 전 기능 진입 허브"><b>신규기능 1차 (9~10월)</b>0. 이미지 공고문(9/11) · 1. 단지 이미지·직인 등록(9/29) · 2. 번호 인증&amp;단지 매핑(9/29) · 3. 캘린더=AI 허브(10/15~10/22)</div>
           <div class="tl-bar bar-apt cont" style="grid-column:3/span 1;" data-kpi="KPI — 유료 전환 대상군 규모 확정">연동 후 파이·활성률 재측정</div>
         </div>
         <div class="tl-row">
-          <div class="tl-bar bar-apt" style="grid-column:1/span 1;" data-kpi="KPI — 개인화 채팅 = 범용 LLM 대체불가·재유입 후크 / 회의자료 = 회의 준비→녹음→회의록 사이클 진입점 / 민원일지 = 락인·베타 소장님 검증된 니즈"><b>신규기능 2차 (11~12월)</b>4. 단지 개인화 채팅(11/5) · 5. 회의 자료 자동 작성(12/3) · 6. 민원일지 등록(12/24)</div>
+          <div class="tl-bar bar-apt" style="grid-column:1/span 1;" data-kpi="KPI — 개인화 채팅 = 범용 LLM 대체불가·재유입 후크 / 회의자료 = 회의 준비→녹음(STT)→회의록→공고문 순환 진입점, 게이트원 재검토 대상 / 민원일지 = 락인·베타 소장님 검증된 니즈"><b>신규기능 2차 (11~12월)</b>4. 단지 개인화 채팅(11/5) · 5. 회의 자료 자동 작성(12/3, 게이트원 재검토) · 6. 민원일지 등록(12/24)</div>
         </div>
         <div class="tl-row">
           <div class="tl-bar bar-apt" style="grid-column:2/span 1;" data-kpi="KPI — 직접 입력 부담 제거 = 진입장벽↓ 활성↑ / 26Q4 개인화 채팅에 장수계 데이터 연결 = 유료 가치 선행 검증 (제품영역 ③⑤)"><b>문서 이해·연동 확장 ③⑤</b>문서함(자동 분류·보관) 착수 · 장수계 채팅 연동→대시보드 개선</div>
@@ -1307,7 +1319,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
     <div class="xnote"><b>※ 리소스 안내</b><span>기획 · 디자인 · FE · BE · AI · QA 공수는 <b style="color:var(--ink)">일자(인일) 기준 추정치</b>이며, 각 파트가 <b style="color:var(--ink)">병렬로 진행</b>되므로 실제 워킹데이(W/D)는 변경될 수 있습니다. 실제 배분은 각 파트리드가 조정합니다.</span></div>
 
     <section class="xsec">
-      <div class="xsec-h"><span class="xs-m">9월 실행 태스크</span><span class="xs-t">활성 2,840명 (22.6%)</span><span class="xs-d">전월 +740</span></div>
+      <div class="xsec-h"><span class="xs-m">9월 실행 태스크</span><span class="xs-t">활성 2,840명 (22.6%)</span><span class="xs-d">전월 +740</span><span class="xs-t" style="color:var(--ink-2);">회원 12,580명</span><span class="xs-d">회원 전월 +968</span><span class="xs-tag" style="color:var(--ink-3);background:var(--surface-2);border-color:var(--rule);">이미지 공고문 실측 반영 예정</span></div>
       <div class="xwrap"><table class="xt">
       <thead><tr>
         <th style="width:150px">기능</th><th style="width:170px">KR 기여</th><th class="c" style="width:48px">우선</th><th class="c" style="width:74px">런칭</th>
@@ -1351,7 +1363,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
     </section>
 
     <section class="xsec">
-      <div class="xsec-h"><span class="xs-m">10월 실행 태스크</span><span class="xs-t">활성 3,830명 (28.1%)</span><span class="xs-d">전월 +990</span></div>
+      <div class="xsec-h"><span class="xs-m">10월 실행 태스크</span><span class="xs-t">활성 3,830명 (28.1%)</span><span class="xs-d">전월 +990</span><span class="xs-t" style="color:var(--ink-2);">회원 13,620명</span><span class="xs-d">회원 전월 +1,040</span></div>
       <div class="xwrap"><table class="xt">
       <thead><tr>
         <th style="width:150px">기능</th><th style="width:170px">KR 기여</th><th class="c" style="width:48px">우선</th><th class="c" style="width:74px">런칭</th>
@@ -1360,10 +1372,10 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
       </tr></thead>
       <tbody>
       <tr>
-        <td class="fn">3. 캘린더 런칭</td>
-        <td class="kr">월례 업무 = 매월 재방문 트리거</td>
+        <td class="fn">3. 캘린더 = AI 허브</td>
+        <td class="kr">AI 선제감지→자동등록 = 전 기능 진입 허브</td>
         <td class="c"><span class="pri p1">P1</span></td>
-        <td class="c">10/22</td>
+        <td class="c">10/15~10/22</td>
         <td class="c">7</td><td class="c">5</td><td class="c">5</td><td class="c">4</td><td class="c">—</td><td class="c">3</td><td class="c tot">24</td>
         <td class="pa">개인화 채팅(4번) 착수</td>
         <td class="pb"><div class="xpb-t">랜딩페이지 신규 기능 적용</div>
@@ -1375,7 +1387,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
     </section>
 
     <section class="xsec peak">
-      <div class="xsec-h"><span class="xs-m">11월 실행 태스크</span><span class="xs-t">활성 5,180명 (35.1%)</span><span class="xs-d">전월 +1,350</span><span class="xs-tag">최대 회수 구간</span></div>
+      <div class="xsec-h"><span class="xs-m">11월 실행 태스크</span><span class="xs-t">활성 5,180명 (35.1%)</span><span class="xs-d">전월 +1,350</span><span class="xs-t" style="color:var(--ink-2);">회원 14,750명</span><span class="xs-d">회원 전월 +1,130</span><span class="xs-tag">최대 회수 구간</span></div>
       <div class="xwrap"><table class="xt">
       <thead><tr>
         <th style="width:150px">기능</th><th style="width:170px">KR 기여</th><th class="c" style="width:48px">우선</th><th class="c" style="width:74px">런칭</th>
@@ -1399,7 +1411,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
     </section>
 
     <section class="xsec final">
-      <div class="xsec-h"><span class="xs-m">12월 실행 태스크</span><span class="xs-t">활성 7,000명 (43.8%)</span><span class="xs-d">전월 +1,820</span><span class="xs-tag">최종</span></div>
+      <div class="xsec-h"><span class="xs-m">12월 실행 태스크</span><span class="xs-t">활성 7,000명 (43.8%)</span><span class="xs-d">전월 +1,820</span><span class="xs-t" style="color:var(--ink-2);">회원 15,970명</span><span class="xs-d">회원 전월 +1,220</span><span class="xs-tag">최종</span></div>
       <div class="xwrap"><table class="xt">
       <thead><tr>
         <th style="width:150px">기능</th><th style="width:170px">KR 기여</th><th class="c" style="width:48px">우선</th><th class="c" style="width:74px">런칭</th>
@@ -1408,14 +1420,15 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
       </tr></thead>
       <tbody>
       <tr>
-        <td class="fn">5. 회의 자료 자동 작성</td>
-        <td class="kr">회의 준비 → 녹음 → 회의록 사이클 진입점</td>
+        <td class="fn">5. 회의 자료 자동 작성<span class="pb-new">게이트원 재검토</span></td>
+        <td class="kr">회의 준비 → 녹음(STT) → 회의록 → 공고문 사이클 진입점</td>
         <td class="c"><span class="pri p2">P2</span></td>
         <td class="c">12/3</td>
         <td class="c">5</td><td class="c">5</td><td class="c">5</td><td class="c">3</td><td class="c">5</td><td class="c">2</td><td class="c tot">25</td>
         <td class="pa">민원일지(6번) 준비</td>
-        <td class="pb"><div class="xpb-t">회의 녹음 (STT)</div>
-          <ul class="xpb"><li><b>목적</b>'준비 → 회의 → 기록'을 한 사이클로 묶어 체류·재방문을 늘린다</li><li><b>목표</b>회의자료 사용자의 후속 기능(녹음·회의록 생성) 연결률 확보</li><li><b>기대효과</b>회의자료로 진행한 회의를 앱에서 바로 녹음해 회의록 자동 생성. 준비만 하고 이탈하던 흐름이 기록까지 이어지고, 쌓인 회의록이 개인화 채팅(4번)의 근거 자료로 재사용된다</li></ul></td>
+        <td class="pb"><div class="xpb-t">회의 녹음 STT → 회의록 → 공고문 흐름</div>
+          <div style="font-size:0.65rem;color:var(--warn);margin-bottom:5px;">⚠ 게이트원(타당성 재검토) 통과 후 진행 — 26Q4 마일스톤 리뷰(260916) 반영</div>
+          <ul class="xpb"><li><b>목적</b>'준비 → 회의 → 기록'을 한 사이클로 묶어 체류·재방문을 늘린다</li><li><b>목표</b>회의자료 사용자의 후속 기능(녹음·회의록 생성) 연결률 확보</li><li><b>기대효과</b>회의자료로 진행한 회의를 앱에서 바로 녹음(STT)해 회의록을 자동 생성하고, 의결사항은 다음 공고문(0번) 작성에 바로 활용된다. 준비만 하고 이탈하던 흐름이 기록·공지까지 이어지고, 쌓인 회의록은 개인화 채팅(4번)의 근거 자료로도 재사용된다</li></ul></td>
       </tr>
       <tr>
         <td class="fn">6. 민원일지 등록</td>
@@ -1446,6 +1459,7 @@ body.doc-editing #doc-content :is(p,li,h1,h2,h3,h4,h5,h6,td,th){ scroll-margin-t
       <div class="pf-card">
         <h3>★ 11월 활성 급증(+1,350) 근거 — 작년 실적 기반</h3>
         <ul>
+          <li><b>전제</b> 캘린더(10/22)·개인화 채팅(11/5) 런칭 완료를 확인한 뒤 11월 재유입 프로모션을 본격 가동한다.</li>
           <li>작년 11월: 지역 소장 행사에 영업팀 참여, 커피·음료 제공 + 아파트케어 가입 유도 → <b>신규 약 2,800명 가입(실측)</b>.</li>
           <li>알림톡 + 카카오 채널을 통한 서비스 소개·홍보 병행.</li>
           <li>올해는 9~10월에 <b>지속 사용 기능</b>(단지이미지·번호인증·캘린더·개인화채팅)을 마중물로 구비.</li>
