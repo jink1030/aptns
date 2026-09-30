@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const VIEWER_CODE = process.env.VIEWER_ACCESS_CODE || '';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    if (!VIEWER_CODE) {
+    const viewerCode = process.env.VIEWER_ACCESS_CODE || '';
+
+    if (!viewerCode) {
       return NextResponse.json(
         { error: '뷰어 모드가 설정되지 않았습니다. 관리자에게 문의하세요.' },
         { status: 403 }
@@ -13,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     const { code } = await req.json();
 
-    if (!code || code !== VIEWER_CODE) {
+    if (!code || code !== viewerCode) {
       return NextResponse.json(
         { error: '접근 코드가 올바르지 않습니다.' },
         { status: 401 }
@@ -27,5 +29,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  return NextResponse.json({ enabled: !!VIEWER_CODE });
+  const viewerCode = process.env.VIEWER_ACCESS_CODE || '';
+  return NextResponse.json({ enabled: !!viewerCode });
 }
