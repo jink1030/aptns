@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Plus, Search, Trash2, Save, X, Tag, Link2, Paperclip, FileText, ExternalLink,
+  Upload, Loader2, CheckCircle2,
 } from 'lucide-react';
 import {
   fetchNotes, createNote, editNote, removeNote,
@@ -48,6 +49,14 @@ function NotesContent() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Bulk import state
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [bulkCategory, setBulkCategory] = useState<NoteCategory>('work');
+  const [bulkTags, setBulkTags] = useState('Confluence, 아파트케어');
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ success: number; total: number } | null>(null);
 
   const reload = useCallback(async () => {
     const all = await fetchNotes();
@@ -176,6 +185,56 @@ function NotesContent() {
     );
   }
 
+  function parseBulkNotes(text: string): { title: string; content: string }[] {
+    const entries: { title: string; content: string }[] = [];
+    const lines = text.split('\n');
+    let currentTitle = '';
+    let currentContent = '';
+
+    for (const line of lines) {
+      if (line.startsWith('제목:') || line.startsWith('제목 :')) {
+        if (currentTitle) {
+          entries.push({ title: currentTitle.trim(), content: currentContent.trim() });
+        }
+        currentTitle = line.replace(/^제목\s*:\s*/, '');
+        currentContent = '';
+      } else if (line.startsWith('내용:') || line.startsWith('내용 :')) {
+        currentContent = line.replace(/^내용\s*:\s*/, '');
+      } else if (currentTitle && line.trim()) {
+        currentContent += '\n' + line;
+      }
+    }
+    if (currentTitle) {
+      entries.push({ title: currentTitle.trim(), content: currentContent.trim() });
+    }
+    return entries;
+  }
+
+  const parsedBulkNotes = parseBulkNotes(bulkText);
+
+  async function handleBulkImport() {
+    if (parsedBulkNotes.length === 0) return;
+    setBulkImporting(true);
+    setBulkResult(null);
+    const tagList = bulkTags.split(',').map((t) => t.trim()).filter(Boolean);
+    let success = 0;
+    for (const entry of parsedBulkNotes) {
+      try {
+        await createNote({
+          title: entry.title,
+          content: entry.content,
+          category: bulkCategory,
+          tags: tagList,
+          linkedNoteIds: [],
+        });
+        success++;
+      } catch { /* skip failed */ }
+    }
+    setBulkImporting(false);
+    setBulkResult({ success, total: parsedBulkNotes.length });
+    await reload();
+  }
+
   const filtered = notes.filter((n) => {
     if (filterCategory !== 'all' && n.category !== filterCategory) return false;
     if (searchQuery) {
@@ -196,12 +255,20 @@ function NotesContent() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">노트</h1>
-        <button
-          onClick={startNew}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm font-medium hover:opacity-90"
-        >
-          <Plus size={16} /> 새 노트
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setShowBulkImport(true); setBulkResult(null); }}
+            className="flex items-center gap-2 px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-medium hover:bg-gray-50 text-[var(--muted)]"
+          >
+            <Upload size={16} /> 일괄 등록
+          </button>
+          <button
+            onClick={startNew}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm font-medium hover:opacity-90"
+          >
+            <Plus size={16} /> 새 노트
+          </button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-[320px_1fr] gap-6">
@@ -495,6 +562,110 @@ function NotesContent() {
           )}
         </div>
       </div>
+
+      {/* Bulk Import Modal */}
+      {showBulkImport && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowBulkImport(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
+              <h3 className="font-bold text-base flex items-center gap-2">
+                <Upload size={18} /> 노트 일괄 등록
+              </h3>
+              <button onClick={() => setShowBulkImport(false)} className="p-1 text-[var(--muted)] hover:text-[var(--foreground)] transition">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="px-5 pb-5 space-y-4">
+              <div className="text-xs text-[var(--muted)] bg-gray-50 rounded-lg p-3 leading-relaxed">
+                아래 형식으로 붙여넣으세요. 여러 노트를 한 번에 등록합니다.<br />
+                <code className="bg-white px-1.5 py-0.5 rounded text-[11px] border">제목: 노트 제목</code><br />
+                <code className="bg-white px-1.5 py-0.5 rounded text-[11px] border">내용: 노트 내용 (여러 줄 가능)</code>
+              </div>
+
+              <textarea
+                value={bulkText}
+                onChange={(e) => { setBulkText(e.target.value); setBulkResult(null); }}
+                rows={12}
+                placeholder={`제목: 아파트케어 비전\n내용: 법적 근거 기반의 판단·문서·민원·시설관리를 자동화해...\n\n제목: 회원 유형 4가지\n내용: 비회원 → 일반회원 → 단지등록 회원...`}
+                className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)] resize-none font-mono"
+              />
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-xs text-[var(--muted)] block mb-1">카테고리</label>
+                  <select
+                    value={bulkCategory}
+                    onChange={(e) => setBulkCategory(e.target.value as NoteCategory)}
+                    className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none"
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-[2]">
+                  <label className="text-xs text-[var(--muted)] block mb-1">태그 (쉼표 구분)</label>
+                  <input
+                    type="text"
+                    value={bulkTags}
+                    onChange={(e) => setBulkTags(e.target.value)}
+                    className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+              </div>
+
+              {parsedBulkNotes.length > 0 && (
+                <div className="border border-[var(--border)] rounded-lg p-3">
+                  <div className="text-xs font-medium text-[var(--muted)] mb-2">
+                    미리보기: {parsedBulkNotes.length}개 노트 감지
+                  </div>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {parsedBulkNotes.map((entry, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs">
+                        <span className="text-[var(--accent)] font-mono mt-0.5">{i + 1}.</span>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{entry.title}</div>
+                          <div className="text-[var(--muted)] line-clamp-1">{entry.content.slice(0, 80)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {bulkResult && (
+                <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+                  bulkResult.success === bulkResult.total ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'
+                }`}>
+                  <CheckCircle2 size={16} />
+                  {bulkResult.total}개 중 {bulkResult.success}개 등록 완료!
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={handleBulkImport}
+                  disabled={bulkImporting || parsedBulkNotes.length === 0}
+                  className="flex-1 px-4 py-2.5 bg-[var(--accent)] text-white rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {bulkImporting ? (
+                    <><Loader2 size={14} className="animate-spin" /> 등록 중...</>
+                  ) : (
+                    <>{parsedBulkNotes.length}개 노트 등록</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowBulkImport(false)}
+                  className="px-4 py-2.5 border border-[var(--border)] rounded-xl text-sm text-[var(--muted)] hover:bg-gray-50"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
