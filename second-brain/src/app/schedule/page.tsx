@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import {
   Plus, Check, Trash2, CalendarDays, Clock, MessageSquareText, Loader2, X,
-  Circle, PlayCircle, CheckCircle2, Pencil,
+  Circle, PlayCircle, CheckCircle2, Pencil, FileText, Search,
 } from 'lucide-react';
-import { fetchTodos, createTodo, editTodo, removeTodo } from '@/lib/db';
-import type { Todo, TodoPriority, TodoStatus } from '@/types';
+import { fetchTodos, createTodo, editTodo, removeTodo, fetchNotes } from '@/lib/db';
+import type { Note, Todo, TodoPriority, TodoStatus } from '@/types';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -36,10 +36,14 @@ export default function SchedulePage() {
   const [showForm, setShowForm] = useState(false);
   const [showExtract, setShowExtract] = useState(false);
 
+  const [allNotes, setAllNotes] = useState<Note[]>([]);
+
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newDue, setNewDue] = useState('');
   const [newPriority, setNewPriority] = useState<TodoPriority>('medium');
+  const [newLinkedNotes, setNewLinkedNotes] = useState<string[]>([]);
+  const [newNoteSearch, setNewNoteSearch] = useState('');
 
   const [conversation, setConversation] = useState('');
   const [extracting, setExtracting] = useState(false);
@@ -54,10 +58,13 @@ export default function SchedulePage() {
   const [editDue, setEditDue] = useState('');
   const [editPriority, setEditPriority] = useState<TodoPriority>('medium');
   const [editStatus, setEditStatus] = useState<TodoStatus>('todo');
+  const [editLinkedNotes, setEditLinkedNotes] = useState<string[]>([]);
+  const [editNoteSearch, setEditNoteSearch] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchTodos().then(setTodos);
+    fetchNotes().then(setAllNotes);
   }, []);
 
   async function reload() {
@@ -74,11 +81,14 @@ export default function SchedulePage() {
       priority: newPriority,
       status: 'todo',
       noteId: null,
+      linkedNoteIds: newLinkedNotes,
     });
     setNewTitle('');
     setNewDesc('');
     setNewDue('');
     setNewPriority('medium');
+    setNewLinkedNotes([]);
+    setNewNoteSearch('');
     setShowForm(false);
     await reload();
   }
@@ -90,6 +100,8 @@ export default function SchedulePage() {
     setEditDue(todo.dueDate || '');
     setEditPriority(todo.priority);
     setEditStatus(todo.status);
+    setEditLinkedNotes(todo.linkedNoteIds || []);
+    setEditNoteSearch('');
   }
 
   function closeDetail() {
@@ -105,6 +117,7 @@ export default function SchedulePage() {
       dueDate: editDue || null,
       priority: editPriority,
       status: editStatus,
+      linkedNoteIds: editLinkedNotes,
     });
     await reload();
     setSaving(false);
@@ -391,6 +404,64 @@ export default function SchedulePage() {
                 <option value="low">낮음</option>
               </select>
             </div>
+            {/* Linked Notes Picker */}
+            <div>
+              <label className="text-xs text-[var(--muted)] flex items-center gap-1 mb-1.5">
+                <FileText size={12} /> 참고 노트 ({newLinkedNotes.length}/10)
+              </label>
+              {newLinkedNotes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {newLinkedNotes.map((nid) => {
+                    const note = allNotes.find((n) => n.id === nid);
+                    return note ? (
+                      <span key={nid} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs">
+                        {note.title.slice(0, 20)}{note.title.length > 20 ? '...' : ''}
+                        <button onClick={() => setNewLinkedNotes((prev) => prev.filter((id) => id !== nid))} className="hover:text-red-500">
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
+              {newLinkedNotes.length < 10 && (
+                <div className="relative">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+                  <input
+                    type="text"
+                    placeholder="노트 검색..."
+                    value={newNoteSearch}
+                    onChange={(e) => setNewNoteSearch(e.target.value)}
+                    className="w-full border border-[var(--border)] rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none focus:border-[var(--accent)]"
+                  />
+                  {newNoteSearch && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border border-[var(--border)] rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                      {allNotes
+                        .filter((n) => !newLinkedNotes.includes(n.id) && n.title.toLowerCase().includes(newNoteSearch.toLowerCase()))
+                        .slice(0, 8)
+                        .map((n) => (
+                          <button
+                            key={n.id}
+                            onClick={() => {
+                              setNewLinkedNotes((prev) => [...prev, n.id]);
+                              setNewNoteSearch('');
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition flex items-center gap-2"
+                          >
+                            <FileText size={12} className="text-[var(--muted)] flex-shrink-0" />
+                            <span className="truncate">{n.title}</span>
+                            <span className="text-[10px] text-[var(--muted)] flex-shrink-0">{n.category}</span>
+                          </button>
+                        ))}
+                      {allNotes.filter((n) => !newLinkedNotes.includes(n.id) && n.title.toLowerCase().includes(newNoteSearch.toLowerCase())).length === 0 && (
+                        <div className="px-3 py-2 text-xs text-[var(--muted)]">검색 결과 없음</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={handleAdd}
@@ -472,6 +543,12 @@ export default function SchedulePage() {
                   <div className="text-xs text-[var(--muted)] flex items-center gap-1 opacity-50">
                     <CalendarDays size={12} />
                     날짜 미지정
+                  </div>
+                )}
+                {todo.linkedNoteIds && todo.linkedNoteIds.length > 0 && (
+                  <div className="text-xs text-blue-500 flex items-center gap-1 mt-0.5">
+                    <FileText size={12} />
+                    참고 노트 {todo.linkedNoteIds.length}개
                   </div>
                 )}
               </div>
@@ -582,6 +659,64 @@ export default function SchedulePage() {
                     <option value="low">낮음</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Linked Notes Picker */}
+              <div>
+                <label className="text-xs text-[var(--muted)] flex items-center gap-1 mb-1.5">
+                  <FileText size={12} /> 참고 노트 ({editLinkedNotes.length}/10)
+                </label>
+                {editLinkedNotes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {editLinkedNotes.map((nid) => {
+                      const note = allNotes.find((n) => n.id === nid);
+                      return note ? (
+                        <span key={nid} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs">
+                          {note.title.slice(0, 20)}{note.title.length > 20 ? '...' : ''}
+                          <button onClick={() => setEditLinkedNotes((prev) => prev.filter((id) => id !== nid))} className="hover:text-red-500">
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+                {editLinkedNotes.length < 10 && (
+                  <div className="relative">
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+                    <input
+                      type="text"
+                      placeholder="노트 검색..."
+                      value={editNoteSearch}
+                      onChange={(e) => setEditNoteSearch(e.target.value)}
+                      className="w-full border border-[var(--border)] rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none focus:border-[var(--accent)]"
+                    />
+                    {editNoteSearch && (
+                      <div className="absolute z-10 mt-1 w-full bg-white border border-[var(--border)] rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                        {allNotes
+                          .filter((n) => !editLinkedNotes.includes(n.id) && n.title.toLowerCase().includes(editNoteSearch.toLowerCase()))
+                          .slice(0, 8)
+                          .map((n) => (
+                            <button
+                              key={n.id}
+                              onClick={() => {
+                                setEditLinkedNotes((prev) => [...prev, n.id]);
+                                setEditNoteSearch('');
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition flex items-center gap-2"
+                            >
+                              <FileText size={12} className="text-[var(--muted)] flex-shrink-0" />
+                              <span className="truncate">{n.title}</span>
+                              <span className="text-[10px] text-[var(--muted)] flex-shrink-0">{n.category}</span>
+                            </button>
+                          ))}
+                        {allNotes.filter((n) => !editLinkedNotes.includes(n.id) && n.title.toLowerCase().includes(editNoteSearch.toLowerCase())).length === 0 && (
+                          <div className="px-3 py-2 text-xs text-[var(--muted)]">검색 결과 없음</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Created date info */}

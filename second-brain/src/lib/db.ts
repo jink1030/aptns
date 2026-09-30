@@ -130,9 +130,10 @@ export async function createTodo(input: {
   priority: TodoPriority;
   status: TodoStatus;
   noteId: string | null;
+  linkedNoteIds?: string[];
 }): Promise<Todo> {
   const sb = getSupabase();
-  if (!sb) return local.saveTodo(input);
+  if (!sb) return local.saveTodo({ ...input, linkedNoteIds: input.linkedNoteIds || [] });
 
   const { data, error } = await sb
     .from('todos')
@@ -143,11 +144,12 @@ export async function createTodo(input: {
       priority: input.priority,
       status: input.status,
       note_id: input.noteId,
+      linked_note_ids: input.linkedNoteIds || [],
     })
     .select()
     .single();
 
-  if (error || !data) return local.saveTodo(input);
+  if (error || !data) return local.saveTodo({ ...input, linkedNoteIds: input.linkedNoteIds || [] });
   return mapTodo(data);
 }
 
@@ -160,6 +162,7 @@ export async function editTodo(
     priority: TodoPriority;
     status: TodoStatus;
     noteId: string | null;
+    linkedNoteIds: string[];
   }>
 ): Promise<Todo | null> {
   const sb = getSupabase();
@@ -172,6 +175,7 @@ export async function editTodo(
   if (input.priority !== undefined) update.priority = input.priority;
   if (input.status !== undefined) update.status = input.status;
   if (input.noteId !== undefined) update.note_id = input.noteId;
+  if (input.linkedNoteIds !== undefined) update.linked_note_ids = input.linkedNoteIds;
 
   const { data, error } = await sb.from('todos').update(update).eq('id', id).select().single();
   if (error || !data) return null;
@@ -219,6 +223,7 @@ export async function migrateLocalToSupabase(): Promise<{ notes: number; todos: 
       priority: todo.priority,
       status: todo.status,
       note_id: todo.noteId,
+      linked_note_ids: todo.linkedNoteIds || [],
       created_at: todo.createdAt,
       updated_at: todo.updatedAt,
     });
@@ -255,6 +260,7 @@ function mapTodo(row: any): Todo {
     priority: row.priority,
     status: row.status,
     noteId: row.note_id,
+    linkedNoteIds: row.linked_note_ids || [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

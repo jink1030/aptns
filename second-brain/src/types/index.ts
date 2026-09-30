@@ -30,6 +30,7 @@ export interface Todo {
   priority: TodoPriority;
   status: TodoStatus;
   noteId: string | null;
+  linkedNoteIds: string[];
   createdAt: string;
   updatedAt: string;
 }

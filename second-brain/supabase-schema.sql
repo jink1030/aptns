@@ -24,6 +24,7 @@ create table if not exists todos (
   priority text not null default 'medium' check (priority in ('high', 'medium', 'low')),
   status text not null default 'todo' check (status in ('todo', 'in_progress', 'done')),
   note_id uuid references notes(id) on delete set null,
+  linked_note_ids text[] not null default '{}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

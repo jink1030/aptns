@@ -68,7 +68,7 @@ export function getTodos(): Todo[] {
 
 export function saveTodo(data: Omit<Todo, 'id' | 'createdAt' | 'updatedAt'>): Todo {
   const todos = getTodos();
-  const todo: Todo = { ...data, id: generateId(), createdAt: now(), updatedAt: now() };
+  const todo: Todo = { ...data, linkedNoteIds: data.linkedNoteIds || [], id: generateId(), createdAt: now(), updatedAt: now() };
   todos.push(todo);
   localStorage.setItem(TODOS_KEY, JSON.stringify(todos));
   return todo;

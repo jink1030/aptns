@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import {
   Lock, FileText, CalendarCheck, Rss, Eye, LogOut,
-  ChevronRight, Clock, CalendarDays, Check,
+  ChevronRight, Clock, CalendarDays, Check, Plus, X, Loader2,
 } from 'lucide-react';
-import { fetchNotes, fetchTodos } from '@/lib/db';
+import { fetchNotes, fetchTodos, createNote } from '@/lib/db';
 import type { Note, Todo, NoteCategory, TodoStatus } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -31,6 +31,12 @@ export default function ViewerPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [todoFilter, setTodoFilter] = useState<'all' | TodoStatus>('all');
+
+  const [showNoteForm, setShowNoteForm] = useState(false);
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteContent, setNoteContent] = useState('');
+  const [noteCategory, setNoteCategory] = useState<NoteCategory>('idea');
+  const [noteSaving, setNoteSaving] = useState(false);
 
   useEffect(() => {
     try {
@@ -104,7 +110,7 @@ export default function ViewerPage() {
               <Eye size={28} className="text-white" />
             </div>
             <h1 className="text-xl font-bold mb-1">Second Brain</h1>
-            <p className="text-sm text-[var(--muted)] mb-6">뷰어 모드 — 읽기 전용</p>
+            <p className="text-sm text-[var(--muted)] mb-6">뷰어 모드</p>
 
             <div className="space-y-3">
               <input
@@ -137,7 +143,7 @@ export default function ViewerPage() {
               </div>
               <div>
                 <h1 className="font-bold text-lg">Second Brain</h1>
-                <p className="text-xs text-[var(--muted)]">읽기 전용 뷰어</p>
+                <p className="text-xs text-[var(--muted)]">뷰어</p>
               </div>
             </div>
             <button
@@ -219,44 +225,124 @@ export default function ViewerPage() {
                   )}
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {notes
-                    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-                    .map(note => (
-                      <button
-                        key={note.id}
-                        onClick={() => setSelectedNote(note)}
-                        className="w-full text-left bg-white rounded-xl border border-[var(--border)] p-4 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`badge badge-${note.category}`}>
-                            {CATEGORY_LABEL[note.category]}
-                          </span>
-                          <span className="text-xs text-[var(--muted)]">
-                            {format(new Date(note.updatedAt), 'M/d HH:mm', { locale: ko })}
-                          </span>
-                        </div>
-                        <div className="font-medium text-sm">{note.title}</div>
-                        <p className="text-xs text-[var(--muted)] line-clamp-2 mt-1">
-                          {note.content.slice(0, 150)}
-                        </p>
-                        {note.tags.length > 0 && (
-                          <div className="flex gap-1 mt-2 flex-wrap">
-                            {note.tags.slice(0, 4).map(tag => (
-                              <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-gray-100 rounded text-[var(--muted)]">
-                                #{tag}
-                              </span>
+                <div>
+                  {/* New Note Button */}
+                  <div className="mb-4">
+                    <button
+                      onClick={() => setShowNoteForm(!showNoteForm)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
+                        showNoteForm
+                          ? 'bg-gray-100 text-[var(--muted)]'
+                          : 'bg-[var(--accent)] text-white hover:opacity-90'
+                      }`}
+                    >
+                      {showNoteForm ? <><X size={16} /> 취소</> : <><Plus size={16} /> 새 노트 작성</>}
+                    </button>
+                  </div>
+
+                  {/* New Note Form */}
+                  {showNoteForm && (
+                    <div className="bg-white rounded-xl border border-[var(--border)] p-5 mb-4">
+                      <h3 className="font-semibold text-sm mb-3">새 노트 작성</h3>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-[var(--muted)] block mb-1">카테고리</label>
+                          <div className="flex gap-2">
+                            {(['idea', 'work', 'research', 'personal'] as NoteCategory[]).map(c => (
+                              <button
+                                key={c}
+                                onClick={() => setNoteCategory(c)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                                  noteCategory === c
+                                    ? 'bg-[var(--accent)] text-white'
+                                    : 'bg-gray-100 text-[var(--muted)] hover:bg-gray-200'
+                                }`}
+                              >
+                                {CATEGORY_LABEL[c]}
+                              </button>
                             ))}
                           </div>
-                        )}
-                        <ChevronRight size={14} className="text-gray-300 mt-1 float-right" />
-                      </button>
-                    ))}
-                  {notes.length === 0 && (
-                    <div className="text-center py-16 text-[var(--muted)] text-sm">
-                      등록된 노트가 없습니다
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="제목"
+                          value={noteTitle}
+                          onChange={e => setNoteTitle(e.target.value)}
+                          className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+                        />
+                        <textarea
+                          placeholder="내용을 입력하세요..."
+                          value={noteContent}
+                          onChange={e => setNoteContent(e.target.value)}
+                          rows={6}
+                          className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)] resize-y"
+                        />
+                        <button
+                          onClick={async () => {
+                            if (!noteTitle.trim()) return;
+                            setNoteSaving(true);
+                            await createNote({
+                              title: noteTitle,
+                              content: noteContent,
+                              category: noteCategory,
+                              tags: noteCategory === 'idea' ? ['아이디어'] : [],
+                              linkedNoteIds: [],
+                            });
+                            setNoteTitle('');
+                            setNoteContent('');
+                            setNoteCategory('idea');
+                            setShowNoteForm(false);
+                            setNoteSaving(false);
+                            await loadData();
+                          }}
+                          disabled={noteSaving || !noteTitle.trim()}
+                          className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {noteSaving ? <><Loader2 size={14} className="animate-spin" /> 저장 중...</> : '저장'}
+                        </button>
+                      </div>
                     </div>
                   )}
+
+                  <div className="space-y-2">
+                    {notes
+                      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+                      .map(note => (
+                        <button
+                          key={note.id}
+                          onClick={() => setSelectedNote(note)}
+                          className="w-full text-left bg-white rounded-xl border border-[var(--border)] p-4 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`badge badge-${note.category}`}>
+                              {CATEGORY_LABEL[note.category]}
+                            </span>
+                            <span className="text-xs text-[var(--muted)]">
+                              {format(new Date(note.updatedAt), 'M/d HH:mm', { locale: ko })}
+                            </span>
+                          </div>
+                          <div className="font-medium text-sm">{note.title}</div>
+                          <p className="text-xs text-[var(--muted)] line-clamp-2 mt-1">
+                            {note.content.slice(0, 150)}
+                          </p>
+                          {note.tags.length > 0 && (
+                            <div className="flex gap-1 mt-2 flex-wrap">
+                              {note.tags.slice(0, 4).map(tag => (
+                                <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-gray-100 rounded text-[var(--muted)]">
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <ChevronRight size={14} className="text-gray-300 mt-1 float-right" />
+                        </button>
+                      ))}
+                    {notes.length === 0 && (
+                      <div className="text-center py-16 text-[var(--muted)] text-sm">
+                        등록된 노트가 없습니다
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -309,6 +395,22 @@ export default function ViewerPage() {
                         {todo.dueDate && (
                           <div className="text-xs flex items-center gap-1 text-[var(--muted)]">
                             <CalendarDays size={12} /> {todo.dueDate}
+                          </div>
+                        )}
+                        {todo.linkedNoteIds && todo.linkedNoteIds.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {todo.linkedNoteIds.map(nid => {
+                              const note = notes.find(n => n.id === nid);
+                              return note ? (
+                                <button
+                                  key={nid}
+                                  onClick={() => { setTab('notes'); setSelectedNote(note); }}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] hover:bg-blue-100 transition"
+                                >
+                                  <FileText size={10} /> {note.title.slice(0, 15)}{note.title.length > 15 ? '...' : ''}
+                                </button>
+                              ) : null;
+                            })}
                           </div>
                         )}
                       </div>
