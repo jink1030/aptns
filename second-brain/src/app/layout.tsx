@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
+import AuthGate from '@/components/AuthGate';
 
 export const metadata: Metadata = {
   title: 'Second Brain',
@@ -15,10 +16,12 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <div className="layout">
-          <Sidebar />
-          <main className="main-content">{children}</main>
-        </div>
+        <AuthGate>
+          <div className="layout">
+            <Sidebar />
+            <main className="main-content">{children}</main>
+          </div>
+        </AuthGate>
       </body>
     </html>
   );
