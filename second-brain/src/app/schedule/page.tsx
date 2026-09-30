@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import {
   Plus, Check, Trash2, CalendarDays, Clock,
 } from 'lucide-react';
-import { getTodos, saveTodo, updateTodo, deleteTodo } from '@/lib/storage';
+import { fetchTodos, createTodo, editTodo, removeTodo } from '@/lib/db';
 import type { Todo, TodoPriority, TodoStatus } from '@/types';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -20,16 +20,17 @@ export default function SchedulePage() {
   const [newPriority, setNewPriority] = useState<TodoPriority>('medium');
 
   useEffect(() => {
-    setTodos(getTodos());
+    fetchTodos().then(setTodos);
   }, []);
 
-  function reload() {
-    setTodos(getTodos());
+  async function reload() {
+    const all = await fetchTodos();
+    setTodos(all);
   }
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!newTitle.trim()) return;
-    saveTodo({
+    await createTodo({
       title: newTitle,
       description: newDesc,
       dueDate: newDue || null,
@@ -42,19 +43,19 @@ export default function SchedulePage() {
     setNewDue('');
     setNewPriority('medium');
     setShowForm(false);
-    reload();
+    await reload();
   }
 
-  function toggleStatus(todo: Todo) {
+  async function toggleStatus(todo: Todo) {
     const next: TodoStatus =
       todo.status === 'todo' ? 'in_progress' : todo.status === 'in_progress' ? 'done' : 'todo';
-    updateTodo(todo.id, { status: next });
-    reload();
+    await editTodo(todo.id, { status: next });
+    await reload();
   }
 
-  function handleDeleteTodo(id: string) {
-    deleteTodo(id);
-    reload();
+  async function handleDeleteTodo(id: string) {
+    await removeTodo(id);
+    await reload();
   }
 
   function dueLabel(dateStr: string): { text: string; color: string } {

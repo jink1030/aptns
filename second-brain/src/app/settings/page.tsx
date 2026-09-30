@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-  Download, Upload, Trash2, Key, Bell, AlertTriangle,
+  Download, Upload, Trash2, Key, Bell, AlertTriangle, Database, CheckCircle, XCircle,
 } from 'lucide-react';
-import { exportData, importData, getNotes, getTodos } from '@/lib/storage';
+import { exportData, importData } from '@/lib/storage';
+import { fetchNotes, fetchTodos, checkSupabaseConnected, migrateLocalToSupabase } from '@/lib/db';
 
 export default function SettingsPage() {
   const [apiKey, setApiKey] = useState('');
@@ -14,6 +15,9 @@ export default function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [noteCount, setNoteCount] = useState(0);
   const [todoCount, setTodoCount] = useState(0);
+  const [supabaseConnected, setSupabaseConnected] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [migrateResult, setMigrateResult] = useState('');
 
   useEffect(() => {
     try {
@@ -22,8 +26,9 @@ export default function SettingsPage() {
       if (key) setApiKey(key);
       if (webhook) setSlackWebhook(webhook);
     } catch {}
-    setNoteCount(getNotes().length);
-    setTodoCount(getTodos().length);
+    setSupabaseConnected(checkSupabaseConnected());
+    fetchNotes().then((n) => setNoteCount(n.length));
+    fetchTodos().then((t) => setTodoCount(t.length));
   }, []);
 
   function handleSaveSettings() {
@@ -58,8 +63,8 @@ export default function SettingsPage() {
       const ok = importData(reader.result as string);
       setImportStatus(ok ? '데이터를 성공적으로 불러왔습니다!' : '파일 형식이 올바르지 않습니다.');
       if (ok) {
-        setNoteCount(getNotes().length);
-        setTodoCount(getTodos().length);
+        fetchNotes().then((n) => setNoteCount(n.length));
+        fetchTodos().then((t) => setTodoCount(t.length));
       }
       setTimeout(() => setImportStatus(''), 3000);
     };
@@ -97,9 +102,75 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleMigrate() {
+    if (!supabaseConnected) return;
+    if (!confirm('브라우저에 저장된 데이터를 Supabase로 복사합니다. 진행하시겠습니까?')) return;
+    setMigrating(true);
+    try {
+      const result = await migrateLocalToSupabase();
+      setMigrateResult(`완료! 노트 ${result.notes}개, 할일 ${result.todos}개를 Supabase로 이전했습니다.`);
+      fetchNotes().then((n) => setNoteCount(n.length));
+      fetchTodos().then((t) => setTodoCount(t.length));
+    } catch {
+      setMigrateResult('마이그레이션 실패. 콘솔을 확인해주세요.');
+    }
+    setMigrating(false);
+    setTimeout(() => setMigrateResult(''), 5000);
+  }
+
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">설정</h1>
+
+      {/* Supabase Status */}
+      <div className="card mb-6">
+        <h2 className="font-semibold text-sm mb-3 flex items-center gap-2">
+          <Database size={16} /> 데이터베이스 연결
+        </h2>
+        <div className="flex items-center gap-2 mb-3">
+          {supabaseConnected ? (
+            <>
+              <CheckCircle size={16} className="text-[var(--success)]" />
+              <span className="text-sm text-[var(--success)] font-medium">Supabase 연결됨</span>
+              <span className="text-xs text-[var(--muted)]">- 어디서든 같은 데이터에 접근 가능</span>
+            </>
+          ) : (
+            <>
+              <XCircle size={16} className="text-[var(--warning)]" />
+              <span className="text-sm text-[var(--warning)] font-medium">로컬 저장소 사용 중</span>
+              <span className="text-xs text-[var(--muted)]">- 이 브라우저에서만 접근 가능</span>
+            </>
+          )}
+        </div>
+        {!supabaseConnected && (
+          <div className="text-xs text-[var(--muted)] p-3 bg-gray-50 rounded-lg">
+            <p className="font-medium mb-1">Supabase 연결 방법:</p>
+            <ol className="space-y-1 ml-3">
+              <li>1. supabase.com 가입 후 프로젝트 생성</li>
+              <li>2. SQL Editor에서 제공된 스키마 실행</li>
+              <li>3. .env.local 파일에 키 설정:</li>
+            </ol>
+            <code className="block mt-2 p-2 bg-gray-100 rounded text-[10px]">
+              NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co<br />
+              NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
+            </code>
+          </div>
+        )}
+        {supabaseConnected && (
+          <div>
+            <button
+              onClick={handleMigrate}
+              disabled={migrating}
+              className="px-4 py-2 border border-[var(--border)] rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
+            >
+              {migrating ? '이전 중...' : '브라우저 데이터 → Supabase 이전'}
+            </button>
+            {migrateResult && (
+              <p className="text-sm mt-2 text-[var(--success)]">{migrateResult}</p>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Data Stats */}
       <div className="card mb-6">

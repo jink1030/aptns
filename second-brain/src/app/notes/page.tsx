@@ -6,8 +6,8 @@ import {
   Plus, Search, Trash2, Save, X, Tag, Link2,
 } from 'lucide-react';
 import {
-  getNotes, saveNote, updateNote, deleteNote,
-} from '@/lib/storage';
+  fetchNotes, createNote, editNote, removeNote,
+} from '@/lib/db';
 import type { Note, NoteCategory } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -42,22 +42,23 @@ function NotesContent() {
   const [linkedIds, setLinkedIds] = useState<string[]>([]);
   const [showLinkPicker, setShowLinkPicker] = useState(false);
 
-  const reload = useCallback(() => {
-    const all = getNotes();
+  const reload = useCallback(async () => {
+    const all = await fetchNotes();
     setNotes(all);
     return all;
   }, []);
 
   useEffect(() => {
-    const all = reload();
-    const idParam = searchParams.get('id');
-    const newParam = searchParams.get('new');
-    if (idParam) {
-      const found = all.find((n) => n.id === idParam);
-      if (found) openNote(found);
-    } else if (newParam) {
-      startNew();
-    }
+    reload().then((all) => {
+      const idParam = searchParams.get('id');
+      const newParam = searchParams.get('new');
+      if (idParam) {
+        const found = all.find((n) => n.id === idParam);
+        if (found) openNote(found);
+      } else if (newParam) {
+        startNew();
+      }
+    });
   }, [searchParams, reload]);
 
   function openNote(note: Note) {
@@ -80,14 +81,14 @@ function NotesContent() {
     setLinkedIds([]);
   }
 
-  function handleSave() {
+  async function handleSave() {
     const tagList = tags
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean);
 
     if (isNew) {
-      const created = saveNote({
+      const created = await createNote({
         title: title || '제목 없음',
         content,
         category,
@@ -96,9 +97,9 @@ function NotesContent() {
       });
       setIsNew(false);
       setSelected(created);
-      reload();
+      await reload();
     } else if (selected) {
-      const updated = updateNote(selected.id, {
+      const updated = await editNote(selected.id, {
         title: title || '제목 없음',
         content,
         category,
@@ -106,17 +107,17 @@ function NotesContent() {
         linkedNoteIds: linkedIds,
       });
       if (updated) setSelected(updated);
-      reload();
+      await reload();
     }
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!selected) return;
     if (!confirm('이 노트를 삭제하시겠습니까?')) return;
-    deleteNote(selected.id);
+    await removeNote(selected.id);
     setSelected(null);
     setIsNew(false);
-    reload();
+    await reload();
   }
 
   function toggleLink(noteId: string) {

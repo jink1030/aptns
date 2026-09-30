@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { getNotes } from '@/lib/storage';
+import { fetchNotes } from '@/lib/db';
 import type { Note, NoteCategory } from '@/types';
 
 const CATEGORY_COLORS: Record<NoteCategory, string> = {
@@ -46,7 +46,7 @@ export default function GraphPage() {
   const animRef = useRef<number>(0);
 
   useEffect(() => {
-    const allNotes = getNotes();
+    fetchNotes().then((allNotes) => {
     setNotes(allNotes);
 
     const nodes: SimNode[] = allNotes.map((n, i) => ({
@@ -86,6 +86,7 @@ export default function GraphPage() {
 
     nodesRef.current = nodes;
     linksRef.current = links;
+    });
 
     return () => cancelAnimationFrame(animRef.current);
   }, []);

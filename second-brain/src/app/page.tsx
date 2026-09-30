@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FileText, CalendarCheck, Sparkles, Plus, AlertTriangle } from 'lucide-react';
-import { getNotes, getTodos } from '@/lib/storage';
+import { fetchNotes, fetchTodos } from '@/lib/db';
 import type { Note, Todo } from '@/types';
 import { format, isPast, isToday, isTomorrow, addDays, isBefore } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -13,8 +13,8 @@ export default function Dashboard() {
   const [todos, setTodos] = useState<Todo[]>([]);
 
   useEffect(() => {
-    setNotes(getNotes());
-    setTodos(getTodos());
+    fetchNotes().then(setNotes);
+    fetchTodos().then(setTodos);
   }, []);
 
   const recentNotes = [...notes].sort(

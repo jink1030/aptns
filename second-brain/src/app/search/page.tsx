@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Sparkles, Search, FileText, Loader2, AlertCircle, Settings } from 'lucide-react';
-import { getNotes } from '@/lib/storage';
+import { fetchNotes } from '@/lib/db';
 import type { Note } from '@/types';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -23,7 +23,7 @@ export default function AISearchPage() {
   const [showKeyInput, setShowKeyInput] = useState(false);
 
   useEffect(() => {
-    setNotes(getNotes());
+    fetchNotes().then(setNotes);
     try {
       const stored = localStorage.getItem('secondbrain_claude_key');
       if (stored) setApiKey(stored);
