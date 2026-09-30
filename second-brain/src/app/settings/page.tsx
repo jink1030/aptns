@@ -85,10 +85,11 @@ export default function SettingsPage() {
   async function testSlackWebhook() {
     if (!slackWebhook) return alert('Slack Webhook URL을 입력해주세요.');
     try {
-      const res = await fetch(slackWebhook, {
+      const res = await fetch('/api/slack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          webhookUrl: slackWebhook,
           text: '🧠 Second Brain 연결 테스트 - 알림이 정상적으로 작동합니다!',
         }),
       });
