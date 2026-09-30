@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Download, Upload, Trash2, Key, Bell, AlertTriangle, Database, CheckCircle, XCircle,
+  Eye, Copy, ExternalLink,
 } from 'lucide-react';
 import { exportData, importData } from '@/lib/storage';
 import { fetchNotes, fetchTodos, checkSupabaseConnected, migrateLocalToSupabase } from '@/lib/db';
@@ -255,6 +256,63 @@ export default function SettingsPage() {
           <li>4. 생성된 Webhook URL을 위 필드에 붙여넣기</li>
           <li>5. &quot;테스트&quot; 버튼으로 작동 확인</li>
         </ol>
+      </div>
+
+      {/* Viewer Share */}
+      <div className="card mb-6">
+        <h2 className="font-semibold text-sm mb-3 flex items-center gap-2">
+          <Eye size={16} /> 뷰어 공유 (읽기 전용)
+        </h2>
+        <p className="text-xs text-[var(--muted)] mb-3">
+          대표님 등 다른 사람에게 노트·할일·리서치 피드를 읽기 전용으로 공유할 수 있습니다.
+          설정 페이지에는 접근할 수 없고, 편집도 불가능합니다.
+        </p>
+
+        <div className="space-y-3">
+          <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="text-xs text-[var(--muted)] mb-1">뷰어 접속 URL</div>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-sm bg-white px-3 py-1.5 rounded border border-[var(--border)] truncate">
+                {typeof window !== 'undefined' ? `${window.location.origin}/viewer` : '/viewer'}
+              </code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/viewer`);
+                  alert('URL이 클립보드에 복사되었습니다!');
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                title="URL 복사"
+              >
+                <Copy size={14} />
+              </button>
+              <a
+                href="/viewer"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                title="뷰어 페이지 열기"
+              >
+                <ExternalLink size={14} />
+              </a>
+            </div>
+          </div>
+
+          <div className="text-xs text-[var(--muted)] p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <p className="font-medium mb-1 text-blue-700">접근 코드 설정 방법:</p>
+            <ol className="space-y-1 ml-3 text-blue-600">
+              <li>1. AWS Amplify 콘솔 접속</li>
+              <li>2. 앱 &gt; 환경 변수로 이동</li>
+              <li>3. 새 변수 추가:</li>
+            </ol>
+            <code className="block mt-2 p-2 bg-white rounded text-[10px] text-blue-800 border border-blue-100">
+              키: VIEWER_ACCESS_CODE<br />
+              값: (원하는 접근 코드, 예: aptcare2024)
+            </code>
+            <p className="mt-2 text-blue-600">
+              4. 저장 후 앱을 재배포하면 뷰어에서 이 코드로 로그인할 수 있습니다
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Backup/Restore */}
