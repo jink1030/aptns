@@ -4,10 +4,11 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Lock, FileText, CalendarCheck, Rss, Eye, LogOut,
   ChevronRight, Clock, CalendarDays, Check, Plus, X, Loader2,
-  Share2, RefreshCw,
+  Share2, RefreshCw, Paperclip, Link2,
 } from 'lucide-react';
 import { fetchNotes, fetchTodos, createNote } from '@/lib/db';
-import type { Note, Todo, NoteCategory, TodoStatus } from '@/types';
+import { uploadFile, validateFile, getFileIcon, formatFileSize } from '@/lib/file-upload';
+import type { Note, Todo, NoteCategory, TodoStatus, Attachment } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -73,6 +74,12 @@ export default function ViewerPage() {
   const [noteTags, setNoteTags] = useState<string[]>([]);
   const [noteTagInput, setNoteTagInput] = useState('');
   const [noteSaving, setNoteSaving] = useState(false);
+  const [noteAttachments, setNoteAttachments] = useState<Attachment[]>([]);
+  const [noteUploading, setNoteUploading] = useState(false);
+  const [noteUploadError, setNoteUploadError] = useState('');
+  const [noteLinkedIds, setNoteLinkedIds] = useState<string[]>([]);
+  const [showNoteLinkPicker, setShowNoteLinkPicker] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -125,6 +132,22 @@ export default function ViewerPage() {
       setNoteTags([...noteTags, tag]);
     }
     setNoteTagInput('');
+  }
+
+  async function handleViewerFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setNoteUploading(true);
+    setNoteUploadError('');
+    for (const file of Array.from(files)) {
+      const error = validateFile(file);
+      if (error) { setNoteUploadError(error); continue; }
+      const attachment = await uploadFile(file, 'temp');
+      if (attachment) setNoteAttachments(prev => [...prev, attachment]);
+      else setNoteUploadError('파일 업로드에 실패했습니다.');
+    }
+    setNoteUploading(false);
+    e.target.value = '';
   }
 
   if (checking) return null;
@@ -320,13 +343,60 @@ export default function ViewerPage() {
                           rows={6}
                           className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)] resize-y"
                         />
+                        {/* File Attachments */}
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Paperclip size={14} className="text-[var(--muted)]" />
+                            <span className="text-xs text-[var(--muted)] font-medium">첨부파일 ({noteAttachments.length})</span>
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={noteUploading}
+                              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] rounded-lg text-xs hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              <Plus size={12} /> {noteUploading ? '업로드 중...' : '파일 추가'}
+                            </button>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept=".pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.gif,.webp"
+                              multiple
+                              onChange={handleViewerFileUpload}
+                              className="hidden"
+                            />
+                          </div>
+                          {noteUploadError && <p className="text-xs text-[var(--danger)] mb-2">{noteUploadError}</p>}
+                          {noteAttachments.length > 0 && (
+                            <div className="space-y-1.5 mb-2">
+                              {noteAttachments.map(att => (
+                                <div key={att.id} className="flex items-center gap-2 p-2 bg-gray-50 border border-[var(--border)] rounded-lg">
+                                  <span className="text-base">{getFileIcon(att.type)}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <span className="text-xs font-medium truncate block">{att.name}</span>
+                                    <span className="text-[10px] text-[var(--muted)]">{formatFileSize(att.size)}</span>
+                                  </div>
+                                  {att.type.startsWith('image/') && (
+                                    <img src={att.url} alt={att.name} className="w-8 h-8 object-cover rounded" />
+                                  )}
+                                  <button
+                                    onClick={() => setNoteAttachments(prev => prev.filter(a => a.id !== att.id))}
+                                    className="p-1 text-[var(--muted)] hover:text-[var(--danger)] hover:bg-red-50 rounded"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-[10px] text-[var(--muted)]">PDF, Excel, CSV, 이미지 (최대 10MB)</p>
+                        </div>
+
                         {/* Tag Input */}
                         <div>
-                          <label className="text-xs text-[var(--muted)] block mb-1">태그</label>
-                          <div className="flex gap-2">
+                          <div className="flex items-center gap-2">
                             <input
                               type="text"
-                              placeholder="태그 입력 후 Enter"
+                              placeholder="태그 (쉼표로 구분: CRM, 아이디어, 리서치)"
                               value={noteTagInput}
                               onChange={e => setNoteTagInput(e.target.value)}
                               onKeyDown={e => {
@@ -337,13 +407,6 @@ export default function ViewerPage() {
                               }}
                               className="flex-1 border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
                             />
-                            <button
-                              type="button"
-                              onClick={handleAddTag}
-                              className="px-3 py-2 bg-gray-100 rounded-lg text-sm text-[var(--muted)] hover:bg-gray-200"
-                            >
-                              추가
-                            </button>
                           </div>
                           {noteTags.length > 0 && (
                             <div className="flex gap-1.5 mt-2 flex-wrap">
@@ -364,6 +427,41 @@ export default function ViewerPage() {
                             </div>
                           )}
                         </div>
+
+                        {/* Linked Notes */}
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => setShowNoteLinkPicker(!showNoteLinkPicker)}
+                            className="flex items-center gap-1.5 text-sm text-[var(--accent)] hover:underline"
+                          >
+                            <Link2 size={14} /> 연결된 노트 ({noteLinkedIds.length})
+                          </button>
+                          {showNoteLinkPicker && (
+                            <div className="mt-2 border border-[var(--border)] rounded-lg p-3 max-h-40 overflow-y-auto">
+                              {notes.length === 0 ? (
+                                <p className="text-xs text-[var(--muted)] text-center py-2">연결할 노트가 없습니다</p>
+                              ) : (
+                                notes.map(n => (
+                                  <label key={n.id} className="flex items-center gap-2 py-1 text-sm cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={noteLinkedIds.includes(n.id)}
+                                      onChange={() => setNoteLinkedIds(prev =>
+                                        prev.includes(n.id) ? prev.filter(id => id !== n.id) : [...prev, n.id]
+                                      )}
+                                    />
+                                    <span className={`badge badge-${n.category}`} style={{ fontSize: 10, padding: '1px 6px' }}>
+                                      {CATEGORY_LABEL[n.category]}
+                                    </span>
+                                    <span className="truncate">{n.title}</span>
+                                  </label>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+
                         <button
                           onClick={async () => {
                             if (!noteTitle.trim()) return;
@@ -373,13 +471,18 @@ export default function ViewerPage() {
                               content: noteContent,
                               category: noteCategory,
                               tags: noteTags.length > 0 ? noteTags : (noteCategory === 'idea' ? ['아이디어'] : []),
-                              linkedNoteIds: [],
+                              linkedNoteIds: noteLinkedIds,
+                              attachments: noteAttachments,
                             });
                             setNoteTitle('');
                             setNoteContent('');
                             setNoteCategory('idea');
                             setNoteTags([]);
                             setNoteTagInput('');
+                            setNoteAttachments([]);
+                            setNoteLinkedIds([]);
+                            setShowNoteLinkPicker(false);
+                            setNoteUploadError('');
                             setShowNoteForm(false);
                             setNoteSaving(false);
                             await loadData();
