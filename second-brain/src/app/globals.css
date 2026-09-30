@@ -32,15 +32,7 @@ body {
 }
 
 .layout {
-  display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr;
   min-height: 100vh;
-}
-
-@media (max-width: 768px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
 }
 
 .sidebar {
@@ -71,13 +63,15 @@ body {
 .main-content {
   margin-left: var(--sidebar-w);
   min-height: 100vh;
-  padding: 24px;
+  padding: 32px 40px;
+  max-width: 1200px;
 }
 
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0;
-    padding: 16px;
+    padding: 20px 16px;
+    padding-top: 60px;
   }
 }
 
