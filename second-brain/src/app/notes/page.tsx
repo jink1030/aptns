@@ -1,14 +1,17 @@
 'use client';
 
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
-  Plus, Search, Trash2, Save, X, Tag, Link2,
+  Plus, Search, Trash2, Save, X, Tag, Link2, Paperclip, FileText, ExternalLink,
 } from 'lucide-react';
 import {
   fetchNotes, createNote, editNote, removeNote,
 } from '@/lib/db';
-import type { Note, NoteCategory } from '@/types';
+import {
+  uploadFile, deleteFile, validateFile, getFileIcon, formatFileSize, extractDriveLinks,
+} from '@/lib/file-upload';
+import type { Note, NoteCategory, Attachment } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -41,6 +44,10 @@ function NotesContent() {
   const [tags, setTags] = useState('');
   const [linkedIds, setLinkedIds] = useState<string[]>([]);
   const [showLinkPicker, setShowLinkPicker] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reload = useCallback(async () => {
     const all = await fetchNotes();
@@ -69,6 +76,8 @@ function NotesContent() {
     setCategory(note.category);
     setTags(note.tags.join(', '));
     setLinkedIds(note.linkedNoteIds);
+    setAttachments(note.attachments || []);
+    setUploadError('');
   }
 
   function startNew() {
@@ -79,6 +88,42 @@ function NotesContent() {
     setCategory('idea');
     setTags('');
     setLinkedIds([]);
+    setAttachments([]);
+    setUploadError('');
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    setUploadError('');
+
+    for (const file of Array.from(files)) {
+      const error = validateFile(file);
+      if (error) {
+        setUploadError(error);
+        continue;
+      }
+
+      const noteId = selected?.id || 'temp';
+      const attachment = await uploadFile(file, noteId);
+      if (attachment) {
+        setAttachments((prev) => [...prev, attachment]);
+      } else {
+        setUploadError('파일 업로드에 실패했습니다.');
+      }
+    }
+
+    setUploading(false);
+    e.target.value = '';
+  }
+
+  async function handleRemoveAttachment(att: Attachment) {
+    if (!confirm(`"${att.name}" 파일을 삭제하시겠습니까?`)) return;
+    const noteId = selected?.id || 'temp';
+    await deleteFile(att, noteId);
+    setAttachments((prev) => prev.filter((a) => a.id !== att.id));
   }
 
   async function handleSave() {
@@ -94,6 +139,7 @@ function NotesContent() {
         category,
         tags: tagList,
         linkedNoteIds: linkedIds,
+        attachments,
       });
       setIsNew(false);
       setSelected(created);
@@ -105,6 +151,7 @@ function NotesContent() {
         category,
         tags: tagList,
         linkedNoteIds: linkedIds,
+        attachments,
       });
       if (updated) setSelected(updated);
       await reload();
@@ -114,6 +161,9 @@ function NotesContent() {
   async function handleDelete() {
     if (!selected) return;
     if (!confirm('이 노트를 삭제하시겠습니까?')) return;
+    for (const att of attachments) {
+      await deleteFile(att, selected.id);
+    }
     await removeNote(selected.id);
     setSelected(null);
     setIsNew(false);
@@ -139,6 +189,7 @@ function NotesContent() {
     return true;
   });
 
+  const driveLinks = extractDriveLinks(content);
   const editing = isNew || selected;
 
   return (
@@ -214,6 +265,9 @@ function NotesContent() {
                       <span className="text-xs text-[var(--muted)]">
                         {format(new Date(note.updatedAt), 'M/d HH:mm', { locale: ko })}
                       </span>
+                      {note.attachments && note.attachments.length > 0 && (
+                        <Paperclip size={12} className="text-[var(--muted)]" />
+                      )}
                     </div>
                     <div className="font-medium text-sm truncate">{note.title}</div>
                     <p className="text-xs text-[var(--muted)] line-clamp-2 mt-1">
@@ -282,12 +336,109 @@ function NotesContent() {
               />
 
               <textarea
-                placeholder="내용을 입력하세요..."
+                placeholder="내용을 입력하세요...&#10;&#10;Google Drive 링크를 붙여넣으면 자동으로 인식됩니다."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                rows={16}
+                rows={14}
                 className="w-full border border-[var(--border)] rounded-lg p-3 text-sm outline-none focus:border-[var(--accent)] resize-none"
               />
+
+              {/* Google Drive Links */}
+              {driveLinks.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-xs text-[var(--muted)] mb-2 font-medium">Google Drive 링크 감지됨</div>
+                  <div className="space-y-1.5">
+                    {driveLinks.map((link) => (
+                      <a
+                        key={link.url}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2.5 bg-blue-50 border border-blue-100 rounded-lg text-sm hover:bg-blue-100 transition"
+                      >
+                        <span className="text-lg">{link.icon}</span>
+                        <span className="font-medium text-blue-700 flex-1 truncate">{link.label}</span>
+                        <ExternalLink size={14} className="text-blue-400" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* File Attachments */}
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Paperclip size={14} className="text-[var(--muted)]" />
+                  <span className="text-sm text-[var(--muted)] font-medium">
+                    첨부파일 ({attachments.length})
+                  </span>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="ml-auto flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] rounded-lg text-xs hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <Plus size={12} />
+                    {uploading ? '업로드 중...' : '파일 추가'}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.gif,.webp"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </div>
+
+                {uploadError && (
+                  <p className="text-xs text-[var(--danger)] mb-2">{uploadError}</p>
+                )}
+
+                {attachments.length > 0 && (
+                  <div className="space-y-1.5">
+                    {attachments.map((att) => (
+                      <div
+                        key={att.id}
+                        className="flex items-center gap-2 p-2.5 bg-gray-50 border border-[var(--border)] rounded-lg"
+                      >
+                        <span className="text-lg">{getFileIcon(att.type)}</span>
+                        <div className="flex-1 min-w-0">
+                          {att.url.startsWith('data:') || att.type.startsWith('image/') ? (
+                            <span className="text-sm font-medium truncate block">{att.name}</span>
+                          ) : (
+                            <a
+                              href={att.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-medium text-[var(--accent)] hover:underline truncate block"
+                            >
+                              {att.name}
+                            </a>
+                          )}
+                          <span className="text-[10px] text-[var(--muted)]">{formatFileSize(att.size)}</span>
+                        </div>
+                        {att.type.startsWith('image/') && (
+                          <img
+                            src={att.url}
+                            alt={att.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                        )}
+                        <button
+                          onClick={() => handleRemoveAttachment(att)}
+                          className="p-1 text-[var(--muted)] hover:text-[var(--danger)] hover:bg-red-50 rounded"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="text-[10px] text-[var(--muted)] mt-2">
+                  PDF, Excel, CSV, 이미지 (최대 10MB)
+                </p>
+              </div>
 
               <div className="mt-4 flex items-center gap-2">
                 <Tag size={14} className="text-[var(--muted)]" />
@@ -337,7 +488,8 @@ function NotesContent() {
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-64 text-[var(--muted)] text-sm">
+            <div className="flex flex-col items-center justify-center h-64 text-[var(--muted)] text-sm">
+              <FileText size={40} className="mb-3 text-gray-300" />
               왼쪽에서 노트를 선택하거나 새 노트를 만들어보세요
             </div>
           )}

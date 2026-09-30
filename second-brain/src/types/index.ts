@@ -2,6 +2,14 @@ export type NoteCategory = 'idea' | 'work' | 'research' | 'personal';
 export type TodoPriority = 'high' | 'medium' | 'low';
 export type TodoStatus = 'todo' | 'in_progress' | 'done';
 
+export interface Attachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  url: string;
+}
+
 export interface Note {
   id: string;
   title: string;
@@ -9,6 +17,7 @@ export interface Note {
   category: NoteCategory;
   tags: string[];
   linkedNoteIds: string[];
+  attachments: Attachment[];
   createdAt: string;
   updatedAt: string;
 }

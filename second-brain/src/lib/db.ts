@@ -1,6 +1,6 @@
 import { getSupabase, isSupabaseConfigured } from './supabase';
 import * as local from './storage';
-import type { Note, Todo, NoteCategory, TodoPriority, TodoStatus } from '@/types';
+import type { Note, Todo, NoteCategory, TodoPriority, TodoStatus, Attachment } from '@/types';
 
 export function checkSupabaseConnected(): boolean {
   return isSupabaseConfigured();
@@ -37,9 +37,10 @@ export async function createNote(input: {
   category: NoteCategory;
   tags: string[];
   linkedNoteIds: string[];
+  attachments?: Attachment[];
 }): Promise<Note> {
   const sb = getSupabase();
-  if (!sb) return local.saveNote(input);
+  if (!sb) return local.saveNote({ ...input, attachments: input.attachments || [] });
 
   const { data, error } = await sb
     .from('notes')
@@ -49,11 +50,12 @@ export async function createNote(input: {
       category: input.category,
       tags: input.tags,
       linked_note_ids: input.linkedNoteIds,
+      attachments: input.attachments || [],
     })
     .select()
     .single();
 
-  if (error || !data) return local.saveNote(input);
+  if (error || !data) return local.saveNote({ ...input, attachments: input.attachments || [] });
   return mapNote(data);
 }
 
@@ -65,6 +67,7 @@ export async function editNote(
     category: NoteCategory;
     tags: string[];
     linkedNoteIds: string[];
+    attachments: Attachment[];
   }>
 ): Promise<Note | null> {
   const sb = getSupabase();
@@ -76,6 +79,7 @@ export async function editNote(
   if (input.category !== undefined) update.category = input.category;
   if (input.tags !== undefined) update.tags = input.tags;
   if (input.linkedNoteIds !== undefined) update.linked_note_ids = input.linkedNoteIds;
+  if (input.attachments !== undefined) update.attachments = input.attachments;
 
   const { data, error } = await sb.from('notes').update(update).eq('id', id).select().single();
   if (error || !data) return null;
@@ -235,6 +239,7 @@ function mapNote(row: any): Note {
     category: row.category,
     tags: row.tags || [],
     linkedNoteIds: row.linked_note_ids || [],
+    attachments: row.attachments || [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

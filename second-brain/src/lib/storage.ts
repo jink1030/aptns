@@ -25,7 +25,7 @@ export function getNote(id: string): Note | undefined {
 
 export function saveNote(data: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Note {
   const notes = getNotes();
-  const note: Note = { ...data, id: generateId(), createdAt: now(), updatedAt: now() };
+  const note: Note = { ...data, attachments: data.attachments || [], id: generateId(), createdAt: now(), updatedAt: now() };
   notes.push(note);
   localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
   return note;
