@@ -7,6 +7,9 @@ applications:
             - npm ci
         build:
           commands:
+            - echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" >> .env.production
+            - echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> .env.production
+            - echo "VIEWER_ACCESS_CODE=$VIEWER_ACCESS_CODE" >> .env.production
             - npm run build
       artifacts:
         baseDirectory: .next
