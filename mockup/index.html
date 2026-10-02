@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"></head><body>
+<title>아파트케어 홈 대시보드 목업</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* Layout: 위쪽 조작 바 → PC 화면(브라우저 틀) + 모바일 화면을 한 줄에 → 아래 "왜 이렇게 보이나" 패널.
+   Design reference: awesome-claude-design / Intercom DESIGN.md — cream canvas, white lifted cards, charcoal primary,
+   one orange accent reserved for AI 비서 actions. Body 18px+ per 아파트케어 원칙. Single light look by choice. */
+:root{
+  color-scheme: light;
+  --canvas:#f5f1ec; --surface:#ffffff; --surface-2:#ebe7e1;
+  --ink:#111111; --ink-muted:#626260; --ink-subtle:#7b7b78;
+  --hairline:#d3cec6; --hairline-soft:#ebe7e1;
+  --ai:#ff5600; --ai-ink:#ffffff;
+  --warn:#b54708; --warn-bg:#fff4e5; --warn-line:#f2c48d;
+  --danger:#c41c1c;
+  --tbd:#5b3df5; --tbd-bg:#efebff;
+  --scrim:rgba(17,17,17,.35);
+  --font:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --r-sm:6px; --r-md:8px; --r-lg:12px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;padding-block:20px;padding-inline:16px}
+button,input,select{font-family:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.wrap{max-width:1480px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px}
+.top h1{font-size:22px;font-weight:500;letter-spacing:-.3px;margin:0;text-wrap:balance}
+.top p{margin:0;color:var(--ink-muted);font-size:14px}
+
+/* control bar */
+.controls{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:14px 16px;display:flex;flex-wrap:wrap;gap:14px 28px;align-items:flex-start}
+.ctl{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ctl h2{font-size:13px;font-weight:600;color:var(--ink-muted);margin:0}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--hairline);background:var(--canvas);color:var(--ink-muted);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.plist{display:flex;flex-wrap:wrap;gap:6px}
+.plist button{text-align:left;border:1px solid var(--hairline);background:var(--surface);border-radius:var(--r-md);padding:6px 10px;font-size:13px;color:var(--ink);max-width:220px}
+.plist button b{font-weight:600;margin-right:4px}
+.plist button span{display:block;color:var(--ink-subtle);font-size:12px}
+.plist button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.reset{border:1px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:var(--r-md);padding:8px 14px;font-weight:500;align-self:flex-end}
+.note{font-size:12px;color:var(--ink-subtle);margin:0}
+
+/* stage */
+.stage{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:8px;min-width:0}
+.col-pc{flex:1 1 760px}
+.col-m{flex:0 0 390px;max-width:100%}
+.lbl{font-size:13px;font-weight:600;color:var(--ink-muted)}
+.scroll{overflow-x:auto;max-width:100%}
+
+/* shared screen pieces */
+.scr{background:var(--canvas);position:relative;overflow:hidden;font-size:18px;display:flex;flex-direction:column;gap:12px}
+.hdr{background:var(--surface);border-radius:var(--r-lg);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.hdr .row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.hdr .apt{font-size:19px;font-weight:600;letter-spacing:-.2px}
+.hdr .meta{font-size:15px;color:var(--ink-muted)}
+.src-tag{font-size:12px;font-weight:600;border-radius:4px;padding:2px 6px;background:var(--surface-2);color:var(--ink-muted);margin-left:4px;vertical-align:2px}
+.link{background:none;border:0;padding:4px 0;color:var(--ink);font-size:15px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.cta-reg{background:var(--surface);border:2px solid var(--ink);border-radius:var(--r-lg);padding:14px;display:flex;flex-direction:column;gap:10px}
+.cta-reg p{margin:0;font-size:17px}
+.cta-reg small{font-size:14px;color:var(--ink-muted)}
+.sec{background:var(--surface);border-radius:var(--r-lg);padding:14px;display:flex;flex-direction:column;gap:10px;position:relative}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sec-h h3{margin:0;font-size:19px;font-weight:600;letter-spacing:-.2px}
+.sec-h small{font-size:14px;color:var(--ink-muted)}
+.todo{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:11px 0;border:0;border-top:1px solid var(--hairline-soft);background:none;text-align:left;font-size:17px;color:var(--ink);width:100%}
+.item:first-child{border-top:0}
+.item .t{min-width:0}
+.item .t span{display:block;font-size:14px;color:var(--ink-muted)}
+.dday{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dday.soon{color:var(--danger)}
+.badge{font-size:12px;font-weight:600;border-radius:4px;padding:3px 6px;white-space:nowrap;line-height:1.2}
+.b-ok{background:var(--ink);color:#fff}
+.b-check{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-line)}
+.b-rec{background:var(--surface-2);color:var(--ink-muted)}
+.b-tbd{background:var(--tbd-bg);color:var(--tbd);font-size:11px}
+.more{background:none;border:0;color:var(--ink-muted);font-size:15px;padding:4px 0;text-align:right}
+.hint{font-size:14px;color:var(--ink-muted);margin:0;background:var(--canvas);border-radius:var(--r-sm);padding:8px 10px}
+.ltr .big{font-size:17px;display:flex;flex-direction:column;gap:4px}
+.ltr .big b{font-weight:600}
+.ltr .src{font-size:13px;color:var(--ink-subtle)}
+.ltr.alert{box-shadow:inset 0 0 0 2px var(--danger)}
+.ltr .warn{color:var(--danger);font-weight:600;font-size:16px;margin:0}
+.btn{border-radius:var(--r-md);padding:11px 16px;font-size:16px;font-weight:500;min-height:46px;border:1px solid var(--ink)}
+.btn-p{background:var(--ink);color:#fff}
+.btn-s{background:var(--surface);color:var(--ink);border-color:var(--hairline)}
+.btn-ai{background:var(--ai);border-color:var(--ai);color:var(--ai-ink)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.x{position:absolute;right:10px;top:10px;background:none;border:0;font-size:18px;color:var(--ink-subtle);padding:4px 8px}
+.inp{display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:6px 6px 6px 14px}
+.inp input{flex:1;min-width:0;border:0;font-size:17px;background:transparent;color:var(--ink);padding:8px 0}
+.inp input:focus{outline:none}
+.inp .send{width:42px;height:42px;border-radius:var(--r-md);border:0;background:var(--ai);color:var(--ai-ink);font-size:18px}
+.sugs{display:flex;flex-direction:column;gap:6px}
+.sug{text-align:left;background:var(--surface);border:1px solid var(--hairline-soft);border-radius:var(--r-md);padding:10px 12px;font-size:16px;color:var(--ink)}
+.sug small{display:block;font-size:12px;color:var(--ink-subtle)}
+.fold{background:var(--surface-2);border-radius:var(--r-md);padding:10px 12px;font-size:15px;color:var(--ink-muted);display:flex;justify-content:space-between}
+.item:hover,.sug:hover{background:var(--canvas)}
+.toast{position:absolute;left:12px;right:12px;bottom:12px;background:var(--ink);color:#fff;border-radius:var(--r-md);padding:10px 12px;font-size:14px;z-index:3}
+
+/* sheet / modal */
+.sheet{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:flex-end;z-index:2}
+.sheet-in{background:var(--surface);width:100%;border-radius:18px 18px 0 0;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:92%;overflow:auto}
+.pc .sheet{align-items:center;justify-content:center}
+.pc .sheet-in{width:520px;border-radius:var(--r-lg)}
+.sheet-in .k{font-size:13px;color:var(--ink-subtle)}
+.sheet-in h4{margin:0;font-size:20px;font-weight:600}
+.sheet-in p{margin:0;font-size:16px;color:var(--ink-muted)}
+.field{display:flex;flex-direction:column;gap:4px;font-size:15px}
+.field input,.field select{font-size:17px;padding:10px 12px;border:1px solid var(--hairline);border-radius:var(--r-md);background:var(--surface);color:var(--ink);min-height:46px}
+.results{display:flex;flex-direction:column;border:1px solid var(--hairline-soft);border-radius:var(--r-md)}
+.res{display:flex;justify-content:space-between;gap:8px;text-align:left;background:none;border:0;border-top:1px solid var(--hairline-soft);padding:12px;font-size:16px;color:var(--ink)}
+.res:first-child{border-top:0}
+.res span{color:var(--ink-muted);font-size:14px;white-space:nowrap}
+.res:hover{background:var(--canvas)}
+.empty{padding:12px;font-size:15px;color:var(--ink-muted)}
+
+/* phone frame */
+.phone{width:390px;max-width:100%;border:1px solid var(--hairline);border-radius:28px;padding:14px 12px 16px}
+.phone .bar{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-subtle);padding:0 6px}
+
+/* pc frame */
+.pc{width:100%;min-width:900px;border:1px solid var(--hairline);border-radius:var(--r-lg);gap:0}
+.chrome{display:flex;align-items:center;gap:8px;background:var(--surface-2);padding:8px 12px;border-bottom:1px solid var(--hairline)}
+.chrome i{width:10px;height:10px;border-radius:50%;background:var(--hairline);display:block}
+.chrome .url{flex:1;background:var(--surface);border-radius:999px;font-size:12px;color:var(--ink-subtle);padding:4px 12px;margin-left:8px}
+.nav{display:flex;align-items:center;gap:24px;background:var(--canvas);padding:12px 24px;border-bottom:1px solid var(--hairline-soft);font-size:15px}
+.nav b{font-weight:600;font-size:17px;margin-right:12px}
+.nav span{color:var(--ink-muted)}
+.nav span.on{color:var(--ink);font-weight:500}
+.nav .sp{flex:1}
+.pc-body{padding:20px 24px 24px;display:flex;flex-direction:column;gap:16px}
+.pc-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+.pc-grid > div{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+/* why */
+.why{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.why h2{font-size:13px;font-weight:600;color:var(--ink-muted);margin:0 0 6px}
+.why table{width:100%;border-collapse:collapse;font-size:13px}
+.why th,.why td{text-align:left;padding:7px 6px;border-top:1px solid var(--hairline-soft);vertical-align:top}
+.why th{color:var(--ink-muted);font-weight:500;width:64px}
+.why ul{margin:0;padding-left:18px;font-size:13px;display:flex;flex-direction:column;gap:4px}
+.grid6{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.grid6 .phone{width:auto}
+.ph-label{font-size:12px;color:var(--ink-muted);padding:0 6px;font-weight:500}
+/* v3: K-APT 연동 보강 */
+.preview{display:flex;flex-direction:column;gap:2px;background:var(--canvas);border-radius:var(--r-md);padding:10px 12px}
+.preview span{font-size:13px;color:var(--ink-muted)}
+.preview b{font-size:16px;font-weight:600}
+.preview em{font-style:normal;font-size:12px;color:var(--ink-subtle)}
+.basis{display:block;font-style:normal;font-size:13px;color:var(--ink);font-weight:500;margin-top:2px}
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kgrid div{background:var(--canvas);border-radius:var(--r-md);padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kgrid span{font-size:13px;color:var(--ink-muted)}
+.kgrid b{font-size:18px;font-weight:600}
+.kgrid i{font-style:normal;font-size:12px;color:var(--ink-subtle)}
+.fund{border:1px solid var(--hairline);border-radius:var(--r-md);padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.fund-h{font-size:15px;font-weight:600}
+.fund-h small{font-weight:500;font-size:13px;color:var(--warn);background:var(--warn-bg);border-radius:4px;padding:1px 6px;margin-left:4px}
+.fund-v{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:17px}
+.fund-v b{font-weight:600}
+.apt .src{font-size:13px;color:var(--ink-subtle)}
+.diffbox{box-shadow:inset 0 0 0 2px var(--ink)}
+.diffbox p{margin:0;font-size:16px}
+.cmp-note{grid-column:1/-1;margin:0;font-size:14px;color:var(--ink-muted)}
+@media (prefers-reduced-motion:no-preference){.item,.sug,.res{transition:background .15s}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1>아파트케어 홈 개인화 대시보드 · 케이스별 목업 v3</h1>
+    <p>PRD v0.3 + K-APT 연동 보강(10/2) · 우리 단지 카드 · 근거 표시 · 등록 직후 비교 · 세대수별 비교 · 숫자와 문구 일부는 샘플</p>
+  </div>
+
+  <div class="controls" aria-label="조작 패널">
+    <div class="ctl"><h2>보기</h2><div class="seg" id="viewSeg"></div></div>
+    <div class="ctl" style="flex:1 1 520px" id="plistWrap"><h2>케이스</h2><div class="plist" id="plist"></div></div>
+    <div class="ctl"><h2>데모 기준일 (시즌 축)</h2><div class="seg" id="dateSeg"></div></div>
+    <div class="ctl"><h2>장수계 미연동 카드 닫기 <span class="badge b-tbd">미확정</span></h2><div class="seg" id="closeSeg"></div></div>
+    <div class="ctl"><h2>장충금 잔액 홈 노출 <span class="badge b-tbd">대표 결정</span></h2><div class="seg" id="fundSeg"></div></div>
+    <button class="reset" id="resetBtn" type="button">처음 상태로 되돌리기</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="col col-pc"><span class="lbl">PC</span><div class="scroll" id="pcHost"></div></div>
+    <div class="col col-m"><span class="lbl">모바일</span><div id="mHost"></div></div>
+  </div>
+  <div class="why" id="whyHost" aria-label="이 화면이 이렇게 나온 이유"></div>
+  <div class="grid6" id="grid" hidden></div>
+</div>
+
+<script>
+(function(){
+  const DATES = [
+    {id:'d1', label:'10월 1일(목)', iso:'2026-10-01'},
+    {id:'d2', label:'11월 3일(화)', iso:'2026-11-03'},
+    {id:'d3', label:'1월 2일(토)', iso:'2027-01-02'}
+  ];
+  const SIDO = ['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'];
+  // 우리가 가진 단지 정보(K-APT 매핑) 샘플
+  // K-APT 기본·상세 정보 + 장기수선충당금 (값은 전부 샘플, 필드는 공공데이터 출력정책 문서의 API 기준)
+  // dong=동 수, use=사용승인일, elev=승강기 대수, heat=난방 방식, mgmt=관리 방식, fund={bal:잔액(원), rate:적립요율(%)}
+  const KAPT = [
+    {name:'송도 □□아파트', sido:'인천', sigungu:'연수구', households:540, dong:7, use:'2012-11-20', elev:14, heat:'지역난방', mgmt:'위탁관리', fund:{bal:1284500000, rate:3.5}},
+    {name:'부평 ◇◇마을', sido:'인천', sigungu:'부평구', households:132, dong:2, use:'1996-04-10', elev:0, heat:'개별난방', mgmt:'자치관리', fund:{bal:96300000, rate:2.0}},
+    {name:'수성 ☆☆타운', sido:'대구', sigungu:'수성구', households:280, dong:4, use:'2005-08-30', elev:8, heat:'개별난방', mgmt:'위탁관리', fund:{bal:410030666, rate:4.0}},
+    {name:'노원 ▽▽아파트', sido:'서울', sigungu:'노원구', households:1480, dong:16, use:'1993-12-01', elev:32, heat:'중앙난방', mgmt:'위탁관리', fund:{bal:3125000000, rate:5.0}},
+    {name:'일산 ◎◎마을 3단지', sido:'경기', sigungu:'고양시', households:812, dong:10, use:'1995-06-15', elev:20, heat:'지역난방', mgmt:'위탁관리', fund:{bal:1960000000, rate:4.5}}
+  ];
+  const kreg = (k, src) => ({name:k.name, sido:k.sido, sigungu:k.sigungu, households:k.households, src:src||'kapt', k:{dong:k.dong, use:k.use, elev:k.elev, heat:k.heat, mgmt:k.mgmt, fund:k.fund}});
+  const PERSONAS = [
+    {id:'P1', name:'단지 등록 · 경기 789세대', sub:'K-APT 매핑 · 장수계 연결', login:true, reg:kreg({name:'○○마을 1단지', sido:'경기', sigungu:'수원시', households:789, dong:9, use:'2009-03-25', elev:18, heat:'지역난방', mgmt:'위탁관리', fund:{bal:1532870000, rate:4.0}}), ltr:'link', plan:'p1'},
+    {id:'P2', name:'단지 등록 · 서울 1,200세대', sub:'K-APT 매핑 · 장수계 미연동', login:true, reg:kreg({name:'△△아파트', sido:'서울', sigungu:'강남구', households:1200, dong:12, use:'1999-10-02', elev:28, heat:'중앙난방', mgmt:'위탁관리', fund:{bal:2840000000, rate:5.0}}), ltr:'none'},
+    {id:'P3', name:'K-APT에 없는 단지', sub:'지역·세대수 직접 설정 · 업로드', login:true, reg:{name:'□□빌리지', sido:'부산', sigungu:'해운대구', households:96, src:'self', k:null}, ltr:'upload', plan:'p3'},
+    {id:'P4', name:'단지 미등록 (매핑 가능)', sub:'"송도" 검색 → 매핑 · 기한 경과', login:true, reg:null, ltr:'expired', plan:'p4'},
+    {id:'P5', name:'단지 미등록 (매핑 안 됨)', sub:'검색해도 없음 → 직접 설정', login:true, reg:null, ltr:'none'},
+    {id:'P6', name:'비회원', sub:'로그인 전', login:false, reg:null}
+  ];
+  const PLANS = {
+    p1:{review:'2028-03-01', base:'2026년 01월 수시조정', from:'아파트너스에서 불러온 계획', years:{2026:'8건 · 6억 9,534만원', 2027:'2건 · 3억 7,000만원'}},
+    p3:{review:'2027-06-01', base:'2024년 06월 정기조정', from:'올린 계획서', years:{2026:'2건 · 1,820만원', 2027:'3건 · 4,100만원'}, sample:true},
+    p4:{review:'2026-05-01', base:'2023년 05월 정기조정', from:'올린 계획서', years:{2026:'2건 · 2,150만원', 2027:'5건 · 9,800만원'}, sample:true},
+    linked:{review:'2028-09-01', base:'2025년 09월 정기조정', from:'아파트너스에서 불러온 계획', years:{2026:'5건 · 2억 1,300만원', 2027:'3건 · 1억 4,000만원'}, sample:true},
+    uploaded:{review:'2028-04-01', base:'2025년 04월 정기조정', from:'올린 계획서', years:{2026:'4건 · 8,700만원', 2027:'2건 · 3,900만원'}, sample:true},
+    replaced:{review:'2029-05-01', base:'2026년 10월 정기조정', from:'올린 계획서', years:{2026:'2건 · 2,150만원', 2027:'5건 · 9,800만원'}, sample:true}
+  };
+  const LEGAL = [
+    {id:'budget', title:'내년 예산안 승인', sub:'회계연도 시작 1개월 전까지', due:'2026-11-30', grade:'ok', size:'acct', q:'내년 예산안 승인 준비 순서 알려줘'},
+    {id:'settle', title:'결산서 제출', sub:'회계연도 끝난 뒤 2개월 안', due:'2027-02-28', grade:'check', size:'acct', q:'결산서 제출 준비할 것 알려줘'},
+    {id:'elev', title:'승강기 정기검사', sub:'기준일을 넣으면 D-day를 알려드려요', due:null, grade:'check', size:'elev', q:'승강기 정기검사 주기 알려줘'},
+    {id:'contract', title:'놓치면 과태료 · 계약서 공개', sub:'계약 체결 후 1개월 안 · 기준일 필요', due:null, grade:'check', size:'acct', q:'계약서 공개 기한과 방법 알려줘'}
+  ];
+  const REC = {
+    '2026-10-01':{win:'1~5일', items:['월초 관리비 부과 자료 점검','동절기 대비 보일러·배관 점검 계획']},
+    '2026-11-03':{win:'1~5일', items:['월초 관리비 부과 자료 점검','동파 방지 안내 공고 준비']},
+    '2027-01-02':{win:'1~5일', items:['올해 연간 업무계획 세우기','한파 대비 계량기 동파 점검']}
+  };
+  // 난방 방식별 시즌 권장 (K-APT 난방 방식이 있을 때만 일반 문구를 대신함)
+  const HEAT_REC = {
+    '2026-10-01':{'개별난방':'세대 보일러 점검 안내 공고 준비','중앙난방':'난방 공급 시작 전 공용 배관·보일러 점검','지역난방':'지역난방 공급 개시일 확인·열교환기 점검'},
+    '2026-11-03':{'개별난방':'세대 보일러 동파 예방 안내','중앙난방':'난방비 부과 기준 안내 공고','지역난방':'난방비 부과 기준 안내 공고'},
+    '2027-01-02':{'개별난방':'한파 대비 세대 보일러 동파 점검','중앙난방':'한파 대비 공용 배관 동파 점검','지역난방':'한파 대비 공용 배관 동파 점검'}
+  };
+  const BAND_LABEL = {s:'150세대 미만', m:'150~299세대', l:'300세대 이상'};
+  // 세대수별 비교 화면용 (모두 같은 날짜, K-APT 매핑 완료, 장수계 미연동)
+  const COMPARE = [
+    {id:'C1', name:'132세대 · 승강기 없음', sub:'150세대 미만', login:true, reg:kreg(KAPT[1]), ltr:'none', hidden:true},
+    {id:'C2', name:'280세대 · 승강기 8대', sub:'150~299세대', login:true, reg:kreg(KAPT[2]), ltr:'none', hidden:true},
+    {id:'C3', name:'1,480세대 · 승강기 32대', sub:'300세대 이상', login:true, reg:kreg(KAPT[3]), ltr:'none', hidden:true}
+  ];
+  const ALL = PERSONAS.concat(COMPARE);
+  const won = n => { const e=Math.floor(n/100000000), m=Math.round((n%100000000)/10000); return (e?e+'억 ':'')+(m?m.toLocaleString('ko-KR')+'만':'')+'원'; };
+  const fundMonth = iso => { const d=new Date(iso+'T00:00:00'); d.setMonth(d.getMonth()-2); return d.getFullYear()+'년 '+(d.getMonth()+1)+'월'; };
+  const ageOf = (use, iso) => +iso.slice(0,4) - +use.slice(0,4) + 1;
+
+  const ui = {view:'both', persona:'P1', date:'d1', close:'off', fund:'a'};
+  let states = {};
+  function fresh(p){ return {reg: p.reg? {...p.reg}:null, ltr:p.ltr||'none', plan:p.plan||null, done:{}, ltrClosed:false, sheet:null, step:null, q:'', manual:{sido:'', sigungu:'', households:''}, err:'', toast:null, input:'', expanded:false, diff:null}; }
+  function resetAll(){ states={}; ALL.forEach(p=>states[p.id]=fresh(p)); }
+  resetAll();
+
+  const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const dayDiff = (a,b) => Math.round((Date.parse(b+'T00:00:00')-Date.parse(a+'T00:00:00'))/86400000);
+  const P = id => ALL.find(p=>p.id===id);
+  const curDate = () => DATES.find(d=>d.id===ui.date);
+  const bandOf = h => h==null? null : h<150?'s':h<300?'m':'l';
+
+  const srcLabel = reg => reg.src==='kapt'?'K-APT':'직접 설정';
+  function applies(item,reg){
+    const b = reg? bandOf(reg.households) : null;
+    if(item.size==='acct'){
+      const basis = reg? reg.households.toLocaleString('ko-KR')+'세대 · '+srcLabel(reg) : null;
+      if(b==='s') return {show:false, why:'150세대 미만이라 뺌'};
+      if(b==='m') return {show:true, grade:'check', basis, why:'150~299세대는 의무관리대상 여부에 따라 달라짐'};
+      if(b===null) return {show:true, grade:item.grade, why:'단지 미등록이라 전부 노출'};
+      return {show:true, grade:item.grade, basis};
+    }
+    if(item.size==='elev'){
+      if(reg && reg.k && reg.k.elev===0) return {show:false, why:'K-APT 승강기 0대라 뺌'};
+      if(reg && reg.k && reg.k.elev>0) return {show:true, grade:item.grade, basis:'승강기 '+reg.k.elev+'대 · K-APT'};
+      return {show:true, grade:'check', why:'승강기 유무를 몰라 확인 필요'};
+    }
+    return {show:true, grade:item.grade};
+  }
+  function buildTodo(p,s,iso){
+    const out=[];
+    if(p.login){
+      LEGAL.forEach(it=>{
+        if(s.done[it.id]) return;
+        let dd=null;
+        if(it.due){ dd=dayDiff(iso,it.due); if(dd<0||dd>90) return; }
+        const a=applies(it,s.reg); if(!a.show) return;
+        out.push({id:it.id,title:it.title,sub:it.sub,grade:a.grade,dd,q:it.q,why:a.why,basis:a.basis});
+      });
+    }
+    const rec=REC[iso];
+    rec.items.forEach((t,i)=>{ const id='rec'+i; if(s.done[id]) return;
+      const heat = (i===1 && p.login && s.reg && s.reg.k && s.reg.k.heat) ? s.reg.k.heat : null;
+      const title = heat? HEAT_REC[iso][heat] : t;
+      out.push({id,title,sub:rec.win+' 점검 · '+(heat?'우리 단지 기준':'일반 기준'),grade:'rec',dd:null,q:title+' 순서 알려줘',basis: heat? heat+' · K-APT' : null}); });
+    const rank={ok:0,check:1,rec:2};
+    out.sort((x,y)=> rank[x.grade]-rank[y.grade] || ((x.dd??999)-(y.dd??999)));
+    return out;
+  }
+  const badge = g => g==='ok'?'<span class="badge b-ok">법정·확인됨</span>':g==='check'?'<span class="badge b-check">확인 필요</span>':'<span class="badge b-rec">권장</span>';
+
+  function removedFor(p,s,iso){
+    if(!p.login || !s.reg) return [];
+    return LEGAL.filter(it=>{ if(it.due){ const dd=dayDiff(iso,it.due); if(dd<0||dd>90) return false; } return !applies(it,s.reg).show; }).map(it=>({title:it.title, why:applies(it,s.reg).why}));
+  }
+  function diffOf(p,before,after,iso){
+    const b=buildTodo(p,before,iso), a=buildTodo(p,after,iso);
+    const ids = l => l.map(x=>x.id);
+    return {removed:b.filter(x=>!ids(a).includes(x.id)).map(x=>x.title), added:a.filter(x=>!ids(b).includes(x.id)).map(x=>x.title),
+      changed:a.filter(x=>{ const o=b.find(y=>y.id===x.id); return o && o.title!==x.title; }).map(x=>b.find(y=>y.id===x.id).title+' → '+x.title)};
+  }
+
+  /* ---------- pieces ---------- */
+  function diffHTML(p,s,pid){
+    if(!s.diff) return '';
+    const {removed,added,changed}=s.diff;
+    return `<section class="sec diffbox"><button class="x" type="button" aria-label="닫기" data-a="diffClose" data-p="${pid}">✕</button><div class="sec-h"><h3>우리 단지 기준으로 바꿨어요</h3></div>${removed.length?`<p><b>뺀 일 ${removed.length}개</b> · ${removed.map(esc).join(', ')}</p>`:''}${added.length?`<p><b>넣은 일 ${added.length}개</b> · ${added.map(esc).join(', ')}</p>`:''}${changed.length?`<p><b>우리 단지에 맞게 바꾼 일 ${changed.length}개</b> · ${changed.map(esc).join(', ')}</p>`:''}${!removed.length&&!added.length&&!changed.length?'<p>할 일 목록은 그대로예요. 아래 우리 단지 카드에 K-APT 정보를 채웠어요</p>':''}</section>`;
+  }
+  function aptHTML(p,s,pid,iso){
+    if(!p.login || !s.reg) return '';
+    const r=s.reg;
+    if(!r.k) return `<section class="sec apt"><div class="sec-h"><h3>우리 단지 정보</h3><small>직접 설정</small></div><p class="hint">K-APT에 공시되지 않은 단지라 승강기·난방·장기수선충당금 같은 단지 수치는 보여드릴 수 없어요. 입력하신 지역과 세대수로만 맞춰 드려요</p><div class="btns"><button class="btn btn-s" type="button" data-a="manualEdit" data-p="${pid}">지역·세대수 수정</button></div></section>`;
+    const k=r.k, age=ageOf(k.use,iso);
+    let h=`<section class="sec apt"><div class="sec-h"><h3>우리 단지 정보</h3><small>샘플 값</small></div><div class="kgrid">`;
+    h+=`<div><span>규모</span><b>${r.households.toLocaleString('ko-KR')}세대 · ${k.dong}개 동</b></div>`;
+    h+=`<div><span>입주</span><b>${age}년 차</b><i>사용승인 ${k.use.slice(0,4)}.${k.use.slice(5,7)}</i></div>`;
+    h+=`<div><span>승강기</span><b>${k.elev? k.elev+'대':'없음'}</b></div>`;
+    h+=`<div><span>난방</span><b>${esc(k.heat)}</b></div>`;
+    h+=`</div>`;
+    if(ui.fund==='a'){
+      h+=`<div class="fund"><div class="fund-h">장기수선충당금 <small>${fundMonth(iso)} 기준</small></div><div class="fund-v"><span>잔액 <b>${won(k.fund.bal)}</b></span><span>적립요율 <b>${k.fund.rate.toFixed(1)}%</b></span></div></div>`;
+    }
+    h+=`<div class="src">K-APT 공시 정보 · 매월 갱신 · 여기서는 고칠 수 없어요</div>`;
+    h+=`<div class="btns"><button class="btn btn-ai" type="button" data-a="ask" data-v="${ui.fund==='a'?'우리 단지 장충금 잔액이랑 적립요율로 올해 공사 여력 알려줘':'우리 단지 장기수선충당금 잔액 알려줘'}" data-p="${pid}">${ui.fund==='a'?'우리 단지 숫자로 물어보기':'장충금 잔액 물어보기'}</button></div>`;
+    return h+`</section>`;
+  }
+  function hdrHTML(p,s,pid){
+    if(!p.login) return `<div class="hdr"><div class="apt">우리 단지 기준으로 보려면</div><div class="meta">로그인하면 지역·규모·장기수선계획에 맞춰 보여드려요</div><div class="btns"><button class="btn btn-p" data-a="toast" data-v="로그인 화면으로 이동" data-p="${pid}" type="button">로그인</button></div></div>`;
+    if(!s.reg) return `<div class="cta-reg"><p><b>우리 단지를 등록해 주세요</b></p><small>단지명을 입력하면 지역과 세대수를 자동으로 채워서, 우리 단지에 해당하는 일만 보여드려요</small><div class="preview"><span>등록하면 바로 보이는 것</span><b>승강기 대수 · 난방 방식 · 입주 연차 · 장기수선충당금 잔액</b><em>K-APT 공시 정보</em></div><div class="btns"><button class="btn btn-p" type="button" data-a="reg" data-p="${pid}">단지 정보 등록하기</button></div></div>`;
+    const r=s.reg;
+    const tag = r.src==='kapt'? '<span class="src-tag">K-APT</span>' : '<span class="src-tag">직접 설정</span>';
+    return `<div class="hdr"><div class="row"><div class="apt">${esc(r.name)}</div><button class="link" type="button" data-a="${r.src==='kapt'?'reg':'manualEdit'}" data-p="${pid}">${r.src==='kapt'?'변경':'수정'}</button></div><div class="meta">${esc(r.sido)}${r.sigungu?' '+esc(r.sigungu):''} · ${r.households.toLocaleString('ko-KR')}세대 ${tag}</div></div>`;
+  }
+  function todoHTML(p,s,pid,list,d){
+    const shown = s.expanded? list : list.slice(0,3);
+    let h=`<section class="sec"><div class="sec-h"><h3>지금 할 일</h3><small>${esc(d.label)}</small></div>`;
+    if(!p.login) h+=`<p class="hint">일반 기준이에요. 로그인하면 우리 단지에 맞춰 바뀌어요</p>`;
+    else if(!s.reg) h+=`<p class="hint">단지를 등록하면 해당되지 않는 일은 빠져요</p>`;
+    if(p.login && list.every(x=>x.grade==='rec')) h+=`<p class="hint">이번 달은 챙길 법정 일정이 없어요</p>`;
+    h+=`<div class="todo">`;
+    shown.forEach(it=>{
+      const dd = it.dd!=null? `<span class="dday ${it.dd<=30?'soon':''}">D-${it.dd}</span>` : '<span class="dday" aria-hidden="true">›</span>';
+      h+=`<button class="item" type="button" data-a="open" data-v="${it.id}" data-p="${pid}">${badge(it.grade)}<span class="t">${esc(it.title)}<span>${esc(it.sub)}</span>${it.basis?`<em class="basis">✓ ${esc(it.basis)}</em>`:''}</span>${dd}</button>`;
+    });
+    h+=`</div>`;
+    const rm = removedFor(p,s,d.iso);
+    if(rm.length) h+=`<p class="hint">우리 단지에 해당 없어서 뺀 일 ${rm.length}개 · ${rm.map(x=>esc(x.title)).join(', ')}</p>`;
+    if(list.length>3) h+=`<button class="more" type="button" data-a="more" data-p="${pid}">${s.expanded?'접기':'더보기 ('+(list.length-3)+')'}</button>`;
+    return h+`</section>`;
+  }
+  function ltrHTML(p,s,pid,iso){
+    if(!p.login || s.ltrClosed) return '';
+    const year=+iso.slice(0,4);
+    if(s.ltr==='none') return `<section class="sec ltr">${ui.close==='on'?`<button class="x" type="button" aria-label="닫기" data-a="ltrClose" data-p="${pid}">✕</button>`:''}<div class="sec-h"><h3>우리 단지 장기수선</h3></div><div class="big">장기수선계획을 연동하면 다음 정기검토와 올해 예정 공사를 여기서 바로 보여드려요</div><div class="btns"><button class="btn btn-p" type="button" data-a="link" data-p="${pid}">불러오기</button><button class="btn btn-s" type="button" data-a="upload" data-p="${pid}">계획서 파일로 올리기</button></div></section>`;
+    if(s.ltr==='reading') return `<section class="sec ltr"><div class="sec-h"><h3>우리 단지 장기수선</h3></div><div class="big">계획서를 읽고 있어요. 화면을 떠나도 계속돼요</div><div class="btns"><button class="btn btn-s" type="button" data-a="readDone" data-p="${pid}">(시연) 읽기 완료</button></div></section>`;
+    const pl=PLANS[s.plan]; const dd=dayDiff(iso,pl.review); const expired=dd<0;
+    let h=`<section class="sec ltr ${expired?'alert':''}"><div class="sec-h"><h3>우리 단지 장기수선</h3>${pl.sample?'<small>샘플 값</small>':''}</div>`;
+    if(expired) h+=`<p class="warn">정기검토 기한(${pl.review.slice(0,4)}년 ${+pl.review.slice(5,7)}월)이 지났어요. 검토를 마쳤다면 새 계획서를 올려주세요</p>`;
+    else h+=`<div class="big"><span>다음 정기검토 <b>${pl.review.slice(0,4)}년 ${+pl.review.slice(5,7)}월</b> · D-${dd}</span><span>${year}년 예정 공사 <b>${esc(pl.years[year]||'-')}</b></span></div>`;
+    h+=`<div class="src">${esc(pl.from)} · 기준 ${esc(pl.base)}</div>`;
+    h+= expired? `<div class="btns"><button class="btn btn-p" type="button" data-a="replace" data-p="${pid}">계획서 교체</button></div>` : `<div class="btns"><button class="btn btn-ai" type="button" data-a="ask" data-v="올해 예정 공사 정리해줘" data-p="${pid}">우리 단지 계획으로 물어보기</button></div>`;
+    return h+`</section>`;
+  }
+  function askHTML(p,s,pid,list,frame){
+    const linked = p.login && ['link','upload'].includes(s.ltr);
+    const top = list.find(x=>x.grade!=='rec')||list[0];
+    const sugs=[
+      {slot:'장수계', q: linked?'올해 예정 공사 정리해줘':'장기수선계획 정기검토는 언제 해야 해?'},
+      {slot:'시즌', q: top? top.q : '이번 달 점검할 것 알려줘'},
+      {slot:'지역', q: s.reg? s.reg.sido+' 관리규약 준칙 기준으로 동대표 임기 알려줘':'관리규약 준칙이 뭐야?'}
+    ];
+    return `<div class="inp"><input data-in="${pid}" id="in-${frame}-${pid}" aria-label="질문 입력" placeholder="우리 단지 일, 물어보세요" value="${esc(s.input)}"><button class="send" type="button" aria-label="보내기" data-a="toast" data-v="AI 비서 대화 화면으로 이동" data-p="${pid}">↑</button></div>`+
+      `<div class="sugs">${sugs.map(x=>`<button class="sug" type="button" data-a="fill" data-v="${esc(x.q)}" data-p="${pid}"><small>${x.slot}</small>${esc(x.q)}</button>`).join('')}</div>`;
+  }
+  function resultsHTML(pid){
+    const s=states[pid]; const q=s.q.trim();
+    const hits = q? KAPT.filter(k=>(k.name+k.sido+k.sigungu).includes(q)) : [];
+    if(!q) return `<div class="empty">단지명을 입력해 보세요. 예: 송도, 수성, 노원</div>`;
+    if(!hits.length) return `<div class="empty">"${esc(q)}"(으)로 찾은 단지가 없어요</div>`;
+    return hits.map(k=>`<button class="res" type="button" data-a="pick" data-v="${esc(k.name)}" data-p="${pid}">${esc(k.name)}<span>${esc(k.sido)} ${esc(k.sigungu)} · ${k.households.toLocaleString('ko-KR')}세대 · 승강기 ${k.elev?k.elev+'대':'없음'}</span></button>`).join('');
+  }
+  function sheetHTML(p,s,pid,list,frame){
+    let h='';
+    if(s.sheet==='reg'){
+      h=`<span class="k">단지 정보 등록 (기존 단지 등록 화면 · K-APT 매핑)</span><h4>우리 단지 찾기</h4><label class="field">단지명<input data-q="${pid}" id="q-${frame}-${pid}" value="${esc(s.q)}" placeholder="예: 송도 □□아파트" autocomplete="off"></label><div class="results" data-results="${pid}">${resultsHTML(pid)}</div><div class="btns"><button class="btn btn-s" type="button" data-a="toManual" data-p="${pid}">찾는 단지가 없어요</button><button class="btn btn-s" type="button" data-a="closeSheet" data-p="${pid}">닫기</button></div>`;
+    } else if(s.sheet==='manual'){
+      const m=s.manual;
+      h=`<span class="k">K-APT에 없는 단지 · 직접 설정</span><h4>지역과 세대수를 알려주세요</h4><p>입력한 값으로 우리 단지에 해당하는 일을 골라요. 나중에 언제든 고칠 수 있어요</p>
+      <label class="field">단지 이름<input data-m="name" data-p="${pid}" id="mn-${frame}-${pid}" value="${esc(m.name||'')}" placeholder="예: □□빌리지"></label>
+      <label class="field">시·도<select data-m="sido" data-p="${pid}" id="ms-${frame}-${pid}"><option value="">선택</option>${SIDO.map(x=>`<option ${m.sido===x?'selected':''}>${x}</option>`).join('')}</select></label>
+      <label class="field">시·군·구 (선택)<input data-m="sigungu" data-p="${pid}" id="mg-${frame}-${pid}" value="${esc(m.sigungu)}" placeholder="예: 해운대구"></label>
+      <label class="field">세대수<input data-m="households" data-p="${pid}" id="mh-${frame}-${pid}" inputmode="numeric" value="${esc(m.households)}" placeholder="예: 96"></label>
+      ${s.err?`<p style="color:var(--danger)">${esc(s.err)}</p>`:''}
+      <div class="btns"><button class="btn btn-p" type="button" data-a="saveManual" data-p="${pid}">저장</button><button class="btn btn-s" type="button" data-a="${s.reg?'closeSheet':'reg'}" data-p="${pid}">${s.reg?'닫기':'다시 검색'}</button></div>`;
+    } else if(s.sheet){
+      const it = list.find(x=>x.id===s.sheet) || {title:'',sub:'',q:''};
+      h=`<span class="k">캘린더 화면 (캘린더 PRD) · 대시보드는 이동만 함</span><h4>${esc(it.title)}</h4><p>${esc(it.sub)}${it.grade==='rec'?' · 캘린더에 일정으로 추가됨 <span class="badge b-tbd">미확정</span>':''}</p><div class="btns"><button class="btn btn-p" type="button" data-a="done" data-v="${it.id}" data-p="${pid}">완료로 표시</button><button class="btn btn-s" type="button" data-a="ask" data-v="${esc(it.q)}" data-p="${pid}">근거 물어보기</button><button class="btn btn-s" type="button" data-a="closeSheet" data-p="${pid}">닫기</button></div>`;
+    }
+    return h? `<div class="sheet"><div class="sheet-in">${h}</div></div>` : '';
+  }
+
+  function renderMobile(pid,label){
+    const p=P(pid), s=states[pid], d=curDate(), list=buildTodo(p,s,d.iso);
+    return `<div class="scr phone" data-frame="m">${label?`<div class="ph-label">${esc(pid)} · ${esc(p.name)}</div>`:''}<div class="bar"><span>9:41</span><span>${esc(pid)} · ${esc(d.label)}</span></div>${hdrHTML(p,s,pid)}${diffHTML(p,s,pid)}${todoHTML(p,s,pid,list,d)}${aptHTML(p,s,pid,d.iso)}${ltrHTML(p,s,pid,d.iso)}${askHTML(p,s,pid,list,'m')}<div class="fold"><span>AI 리포트</span><span>펼치기 ▾</span></div>${sheetHTML(p,s,pid,list,'m')}${s.toast?`<div class="toast" role="status">${esc(s.toast)}</div>`:''}</div>`;
+  }
+  function renderPC(pid){
+    const p=P(pid), s=states[pid], d=curDate(), list=buildTodo(p,s,d.iso);
+    return `<div class="scr pc" data-frame="pc"><div class="chrome"><i></i><i></i><i></i><span class="url">aptcare.aptners.com/chat</span></div><div class="nav"><b>아파트케어</b><span class="on">홈</span><span>AI 비서</span><span>공고문</span><span>과태료케어</span><span>캘린더</span><span class="sp"></span><span>${p.login?'내 계정':'로그인'}</span></div><div class="pc-body">${hdrHTML(p,s,pid)}${diffHTML(p,s,pid)}<div class="pc-grid"><div>${todoHTML(p,s,pid,list,d)}<div class="fold"><span>AI 리포트</span><span>펼치기 ▾</span></div></div><div>${aptHTML(p,s,pid,d.iso)}${ltrHTML(p,s,pid,d.iso)}<section class="sec"><div class="sec-h"><h3>AI 비서에게 물어보기</h3></div>${askHTML(p,s,pid,list,'pc')}</section></div></div></div>${sheetHTML(p,s,pid,list,'pc')}${s.toast?`<div class="toast" role="status">${esc(s.toast)}</div>`:''}</div>`;
+  }
+  function renderWhy(){
+    const p=P(ui.persona), s=states[ui.persona], d=curDate(), list=buildTodo(p,s,d.iso);
+    const r=s.reg;
+    const ltrTxt={none:'미연동 → 등록 유도 카드',link:'연결 → 요약 카드',upload:'업로드 → 요약 카드',expired:'업로드·기한 경과 → 교체 강조',reading:'업로드 처리 중'}[s.ltr];
+    const regTxt = !p.login? '비회원 → 사용 안 함' : !r? '미등록 → [단지 정보 등록하기]' : r.src==='kapt'? '단지명 → K-APT 매핑' : 'K-APT에 없음 → 직접 설정';
+    let h=`<div><h2>이 화면이 이렇게 나온 이유</h2><table><tbody>`;
+    h+=`<tr><th>단지</th><td>${regTxt}</td></tr>`;
+    h+=`<tr><th>지역</th><td>${r? esc(r.sido+(r.sigungu?' '+r.sigungu:''))+(r.src==='kapt'?' · K-APT':' · 직접 입력'):'모름'}</td></tr>`;
+    h+=`<tr><th>규모</th><td>${r? r.households.toLocaleString('ko-KR')+'세대 → '+BAND_LABEL[bandOf(r.households)]:'모름 → 법정 카드 전부 노출'}</td></tr>`;
+    h+=`<tr><th>시설</th><td>${r&&r.k? '승강기 '+(r.k.elev?r.k.elev+'대':'없음')+' · '+esc(r.k.heat)+' · K-APT' : r? 'K-APT에 없음 → 모름' : '모름'}</td></tr>`;
+    h+=`<tr><th>장충금</th><td>${r&&r.k? (ui.fund==='a'? fundMonth(d.iso)+' 기준 잔액·요율 홈 노출 (A안)' : '홈 미노출, AI 비서 질문으로만 (B안)') : '없음'}</td></tr>`;
+    h+=`<tr><th>장수계</th><td>${p.login?ltrTxt:'로그인 필요'}</td></tr>`;
+    h+=`<tr><th>시즌</th><td>${esc(d.label)} · 월내 ${esc(REC[d.iso].win)} · 90일 안 법정 기한</td></tr></tbody></table></div>`;
+    h+=`<div><h2>지금 할 일 정렬 결과</h2><ul>${list.map(it=>`<li>${{ok:'법정·확인됨',check:'확인 필요',rec:'권장'}[it.grade]} · ${esc(it.title)}${it.dd!=null?' (D-'+it.dd+')':''}${it.basis?'<br><span class="note">근거: '+esc(it.basis)+'</span>':''}${it.why?'<br><span class="note">'+esc(it.why)+'</span>':''}</li>`).join('')}${removedFor(p,s,d.iso).map(x=>`<li><s>${esc(x.title)}</s><br><span class="note">${esc(x.why)}</span></li>`).join('')}</ul></div>`;
+    h+=`<div><h2>확인할 것</h2><ul><li>법정 항목 등급은 시연용이에요. 실제 등급은 현행 조문 대조 결과로 정해져요</li><li>권장 문구, 단지 검색 결과, P1 외 장수계 수치는 샘플이에요</li><li>규모 경계(150·300세대)는 원문 대조 전이에요</li><li>직접 설정 단지는 승강기 유무를 몰라 관련 항목이 "확인 필요"로 떠요</li><li>K-APT 단지 수치(승강기·난방·장충금)는 모두 샘플이에요. 우리 DB 적재 여부는 BE 확인 중</li><li>장충금은 K-APT 공시가 2개월 늦어서 기준월을 꼭 같이 보여줘요</li></ul></div>`;
+    return h;
+  }
+  function seg(id, items, key){
+    document.getElementById(id).innerHTML = items.map(x=>`<button type="button" aria-pressed="${ui[key]===x.id}" data-k="${key}" data-v="${x.id}">${x.label}</button>`).join('');
+  }
+  function render(){
+    seg('viewSeg',[{id:'both',label:'PC + 모바일'},{id:'all',label:'모바일 6개 나란히'},{id:'compare',label:'세대수별 비교'}],'view');
+    seg('fundSeg',[{id:'a',label:'A안 홈에 노출'},{id:'b',label:'B안 질문으로만'}],'fund');
+    seg('dateSeg',DATES,'date');
+    seg('closeSeg',[{id:'off',label:'닫기 없음'},{id:'on',label:'닫기 있음'}],'close');
+    document.getElementById('plist').innerHTML = PERSONAS.map(p=>`<button type="button" aria-pressed="${ui.persona===p.id}" data-k="persona" data-v="${p.id}"><b>${p.id}</b>${esc(p.name)}<span>${esc(p.sub)}</span></button>`).join('');
+    const stage=document.getElementById('stage'), why=document.getElementById('whyHost'), grid=document.getElementById('grid');
+    document.getElementById('plistWrap').hidden = ui.view==='compare';
+    if(ui.view==='all' || ui.view==='compare'){
+      stage.hidden=true; why.hidden=true; grid.hidden=false;
+      const set = ui.view==='all'? PERSONAS : COMPARE;
+      grid.innerHTML = (ui.view==='compare'?'<p class="cmp-note">같은 날짜, 모두 K-APT 매핑 완료 · 세대수와 승강기·난방에 따라 지금 할 일과 근거가 달라져요 (값은 샘플)</p>':'') + set.map(p=>renderMobile(p.id,true)).join('');
+    } else {
+      stage.hidden=false; why.hidden=false; grid.hidden=true; grid.innerHTML='';
+      document.getElementById('pcHost').innerHTML = renderPC(ui.persona);
+      document.getElementById('mHost').innerHTML = renderMobile(ui.persona,false);
+      why.innerHTML = renderWhy();
+    }
+  }
+
+  let toastTimer=null;
+  function toast(pid,msg){ states[pid].toast=msg; render(); clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ states[pid].toast=null; render(); },2400); }
+  function focusLater(sel){ requestAnimationFrame(()=>{ const el=document.querySelector(sel); if(el){ el.focus(); const v=el.value; if(el.setSelectionRange && el.type!=='number') el.setSelectionRange(v.length,v.length);} }); }
+
+  document.addEventListener('click', e=>{
+    const k=e.target.closest('[data-k]');
+    if(k){ ui[k.dataset.k]=k.dataset.v; render(); return; }
+    if(e.target.id==='resetBtn'){ resetAll(); Object.assign(ui,{view:'both',persona:'P1',date:'d1',close:'off',fund:'a'}); render(); return; }
+    const a=e.target.closest('[data-a]'); if(!a) return;
+    const pid=a.dataset.p, s=states[pid], v=a.dataset.v, frame=(a.closest('[data-frame]')||{}).dataset?.frame||'m';
+    switch(a.dataset.a){
+      case 'reg': s.sheet='reg'; s.step='search'; s.err=''; render(); focusLater(`#q-${frame}-${pid}`); break;
+      case 'pick': { const k=KAPT.find(x=>x.name===v); const before={...s, reg:null}; const nr=kreg(k); s.diff=diffOf(P(pid),before,{...s, reg:nr},curDate().iso); s.reg=nr; s.sheet=null; s.q=''; toast(pid,'단지를 등록했어요. K-APT에서 단지 정보를 가져왔어요'); break; }
+      case 'diffClose': s.diff=null; render(); break;
+      case 'toManual': s.sheet='manual'; s.manual={name:'',sido:'',sigungu:'',households:''}; s.err=''; render(); break;
+      case 'manualEdit': s.sheet='manual'; s.manual={name:s.reg.name,sido:s.reg.sido,sigungu:s.reg.sigungu||'',households:String(s.reg.households)}; s.err=''; render(); break;
+      case 'saveManual': { const m=s.manual; const n=parseInt(String(m.households).replace(/[^0-9]/g,''),10);
+        if(!m.sido){ s.err='시·도를 골라주세요'; render(); break; }
+        if(!n||n<1){ s.err='세대수를 숫자로 입력해 주세요 (예: 96)'; render(); break; }
+        const nr={name:m.name||'직접 설정한 단지',sido:m.sido,sigungu:m.sigungu,households:n,src:'self',k:null}; if(!s.reg) s.diff=diffOf(P(pid),{...s, reg:null},{...s, reg:nr},curDate().iso); s.reg=nr; s.sheet=null; s.err=''; toast(pid,'지역과 세대수를 저장했어요'); break; }
+      case 'more': s.expanded=!s.expanded; render(); break;
+      case 'open': s.sheet=v; render(); break;
+      case 'closeSheet': s.sheet=null; s.err=''; render(); break;
+      case 'done': s.done[v]=true; s.sheet=null; toast(pid,'캘린더에서 완료했어요. 지금 할 일에서 내렸어요'); break;
+      case 'link': s.ltr='link'; s.plan='linked'; toast(pid,'(장수계 PRD 흐름) 휴대폰 인증 → 번호 대조 → 불러오기 완료'); break;
+      case 'upload': s.ltr='reading'; render(); break;
+      case 'readDone': s.ltr='upload'; s.plan=s.plan||'uploaded'; toast(pid,'(장수계 PRD 흐름) 추출 결과 확인 → 등록 완료'); break;
+      case 'replace': s.ltr='upload'; s.plan='replaced'; toast(pid,'새 계획서로 교체했어요'); break;
+      case 'ltrClose': s.ltrClosed=true; toast(pid,'장기수선 카드를 숨겼어요'); break;
+      case 'fill': s.input=v; render(); focusLater(`#in-${frame}-${pid}`); break;
+      case 'ask': s.input=v; s.sheet=null; toast(pid,'AI 비서 대화 화면으로 이동 (질문만 넘김, 자동 전송 안 함)'); break;
+      case 'toast': toast(pid,v); break;
+    }
+  });
+  document.addEventListener('input', e=>{
+    const t=e.target;
+    if(t.dataset.in){ states[t.dataset.in].input=t.value; document.querySelectorAll(`[data-in="${t.dataset.in}"]`).forEach(x=>{ if(x!==t) x.value=t.value; }); }
+    if(t.dataset.q){ const pid=t.dataset.q; states[pid].q=t.value; document.querySelectorAll(`[data-q="${pid}"]`).forEach(x=>{ if(x!==t) x.value=t.value; }); document.querySelectorAll(`[data-results="${pid}"]`).forEach(x=>x.innerHTML=resultsHTML(pid)); }
+    if(t.dataset.m){ states[t.dataset.p].manual[t.dataset.m]=t.value; }
+  });
+  document.addEventListener('change', e=>{ const t=e.target; if(t.dataset.m){ states[t.dataset.p].manual[t.dataset.m]=t.value; } });
+  render();
+})();
+</script>
+</body></html>
