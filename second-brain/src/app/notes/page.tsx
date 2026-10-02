@@ -244,6 +244,7 @@ function NotesContent() {
     let currentContent = '';
     let currentTags: string[] | undefined;
     let mainTitle = '';
+    let mainTags: string[] | undefined;
 
     for (const line of lines) {
       const h1Match = line.match(/^#\s+(.+)/);
@@ -256,7 +257,7 @@ function NotesContent() {
 
       if (h2Match) {
         if (currentTitle) {
-          sections.push({ title: currentTitle, content: currentContent.trim(), tags: currentTags });
+          sections.push({ title: currentTitle, content: currentContent.trim(), tags: currentTags || mainTags });
         }
         currentTitle = h2Match[1].replace(/^\d+\.\s*/, '').trim();
         currentContent = '';
@@ -266,7 +267,15 @@ function NotesContent() {
 
       const tagLine = line.match(/^태그\s*:\s*(.+)/);
       if (tagLine) {
-        currentTags = tagLine[1].split(',').map((t) => t.replace(/#/g, '').trim()).filter(Boolean);
+        const raw = tagLine[1].trim();
+        const parsed = raw.includes(',')
+          ? raw.split(',').map((t) => t.replace(/#/g, '').trim()).filter(Boolean)
+          : raw.split(/\s+/).map((t) => t.replace(/#/g, '').trim()).filter(Boolean);
+        if (!currentTitle) {
+          mainTags = parsed;
+        } else {
+          currentTags = parsed;
+        }
         continue;
       }
 
@@ -275,11 +284,16 @@ function NotesContent() {
       }
     }
     if (currentTitle) {
-      sections.push({ title: currentTitle, content: currentContent.trim(), tags: currentTags });
+      sections.push({ title: currentTitle, content: currentContent.trim(), tags: currentTags || mainTags });
     }
 
     if (sections.length === 0 && mainTitle) {
-      sections.push({ title: mainTitle, content: text.replace(/^#\s+.+\n/, '').trim() });
+      sections.push({ title: mainTitle, content: text.replace(/^#\s+.+\n/, '').trim(), tags: mainTags });
+    }
+
+    if (mainTitle && sections.length > 1) {
+      const short = mainTitle.length > 20 ? mainTitle.slice(0, 20) : mainTitle;
+      sections.forEach((s) => { s.title = `[${short}] ${s.title}`; });
     }
 
     return sections.filter((s) => s.content.length > 0);
