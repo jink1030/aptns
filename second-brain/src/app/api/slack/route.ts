@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
-    const { webhookUrl, text } = await req.json();
+    const { webhookUrl: clientUrl, text } = await req.json();
+    const webhookUrl = clientUrl || process.env.SLACK_WEBHOOK_URL || '';
+
+    if (!webhookUrl && !text) {
+      return NextResponse.json({ error: 'webhookUrl과 text가 필요합니다.', hasEnvUrl: !!process.env.SLACK_WEBHOOK_URL }, { status: 400 });
+    }
 
     if (!webhookUrl || !text) {
       return NextResponse.json({ error: 'webhookUrl과 text가 필요합니다.' }, { status: 400 });

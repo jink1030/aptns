@@ -19,6 +19,8 @@ export default function SettingsPage() {
   const [supabaseConnected, setSupabaseConnected] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [migrateResult, setMigrateResult] = useState('');
+  const [hasEnvClaudeKey, setHasEnvClaudeKey] = useState(false);
+  const [hasEnvSlackUrl, setHasEnvSlackUrl] = useState(false);
 
   useEffect(() => {
     try {
@@ -30,7 +32,33 @@ export default function SettingsPage() {
     setSupabaseConnected(checkSupabaseConnected());
     fetchNotes().then((n) => setNoteCount(n.length));
     fetchTodos().then((t) => setTodoCount(t.length));
+    checkEnvKeys();
   }, []);
+
+  async function checkEnvKeys() {
+    try {
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: '', context: '', apiKey: '' }),
+      });
+      const data = await res.json();
+      setHasEnvClaudeKey(data.error !== 'API 키가 필요합니다.');
+    } catch {
+      setHasEnvClaudeKey(false);
+    }
+    try {
+      const res = await fetch('/api/slack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhookUrl: '', text: '' }),
+      });
+      const data = await res.json();
+      setHasEnvSlackUrl(!!data.hasEnvUrl);
+    } catch {
+      setHasEnvSlackUrl(false);
+    }
+  }
 
   function handleSaveSettings() {
     try {
@@ -195,9 +223,39 @@ export default function SettingsPage() {
           <Key size={16} /> API 설정
         </h2>
 
+        {/* Env var status */}
+        <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 mb-4">
+          <p className="text-xs font-medium text-blue-700 mb-2">서버 환경변수 상태 (Amplify)</p>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs">
+              {hasEnvClaudeKey ? (
+                <><CheckCircle size={12} className="text-[var(--success)]" /><span className="text-[var(--success)]">CLAUDE_API_KEY 설정됨</span></>
+              ) : (
+                <><XCircle size={12} className="text-[var(--warning)]" /><span className="text-[var(--warning)]">CLAUDE_API_KEY 미설정</span></>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              {hasEnvSlackUrl ? (
+                <><CheckCircle size={12} className="text-[var(--success)]" /><span className="text-[var(--success)]">SLACK_WEBHOOK_URL 설정됨</span></>
+              ) : (
+                <><XCircle size={12} className="text-[var(--warning)]" /><span className="text-[var(--warning)]">SLACK_WEBHOOK_URL 미설정</span></>
+              )}
+            </div>
+          </div>
+          {(!hasEnvClaudeKey || !hasEnvSlackUrl) && (
+            <div className="text-[10px] text-blue-600 mt-2">
+              Amplify 콘솔 &gt; 앱 &gt; 환경 변수에서 설정하면 브라우저 저장 없이 영구 적용됩니다.
+              설정 후 재배포가 필요합니다.
+            </div>
+          )}
+        </div>
+
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-[var(--muted)] block mb-1">Claude API 키</label>
+            <label className="text-sm text-[var(--muted)] block mb-1">
+              Claude API 키
+              {hasEnvClaudeKey && <span className="text-[10px] text-[var(--success)] ml-2">(서버 설정됨 - 아래는 선택사항)</span>}
+            </label>
             <input
               type="password"
               placeholder="sk-ant-..."
@@ -206,12 +264,17 @@ export default function SettingsPage() {
               className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
             />
             <p className="text-xs text-[var(--muted)] mt-1">
-              AI 검색 기능에 사용됩니다. console.anthropic.com에서 발급받으세요.
+              {hasEnvClaudeKey
+                ? '서버에 설정된 키를 사용 중입니다. 아래 입력은 서버 키 대신 사용할 때만 필요합니다.'
+                : 'AI 검색 기능에 사용됩니다. Amplify 환경변수 CLAUDE_API_KEY로 설정하면 영구 적용됩니다.'}
             </p>
           </div>
 
           <div>
-            <label className="text-sm text-[var(--muted)] block mb-1">Slack Webhook URL</label>
+            <label className="text-sm text-[var(--muted)] block mb-1">
+              Slack Webhook URL
+              {hasEnvSlackUrl && <span className="text-[10px] text-[var(--success)] ml-2">(서버 설정됨 - 아래는 선택사항)</span>}
+            </label>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -228,7 +291,9 @@ export default function SettingsPage() {
               </button>
             </div>
             <p className="text-xs text-[var(--muted)] mt-1">
-              듀데이트 알림에 사용됩니다. Slack App에서 Incoming Webhook을 생성하세요.
+              {hasEnvSlackUrl
+                ? '서버에 설정된 URL을 사용 중입니다. 아래 입력은 서버 URL 대신 사용할 때만 필요합니다.'
+                : '듀데이트 알림에 사용됩니다. Amplify 환경변수 SLACK_WEBHOOK_URL로 설정하면 영구 적용됩니다.'}
             </p>
           </div>
 
@@ -237,9 +302,9 @@ export default function SettingsPage() {
               onClick={handleSaveSettings}
               className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm font-medium hover:opacity-90"
             >
-              설정 저장
+              이 브라우저에 저장
             </button>
-            {saved && <span className="text-sm text-[var(--success)]">저장됨!</span>}
+            {saved && <span className="text-sm text-[var(--success)]">저장됨! (이 브라우저에서만 유효)</span>}
           </div>
         </div>
       </div>

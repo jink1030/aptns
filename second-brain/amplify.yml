@@ -11,6 +11,8 @@ applications:
             - echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> .env.production
             - echo "VIEWER_ACCESS_CODE=$VIEWER_ACCESS_CODE" >> .env.production
             - echo "ADMIN_ACCESS_CODE=$ADMIN_ACCESS_CODE" >> .env.production
+            - echo "CLAUDE_API_KEY=$CLAUDE_API_KEY" >> .env.production
+            - echo "SLACK_WEBHOOK_URL=$SLACK_WEBHOOK_URL" >> .env.production
             - npm run build
       artifacts:
         baseDirectory: .next

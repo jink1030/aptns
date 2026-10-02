@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
-    const { query, context, apiKey } = await req.json();
+    const { query, context, apiKey: clientKey } = await req.json();
+    const apiKey = clientKey || process.env.CLAUDE_API_KEY || '';
 
     if (!apiKey) {
       return NextResponse.json({ error: 'API 키가 필요합니다.' }, { status: 400 });
@@ -17,21 +20,24 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5',
-        max_tokens: 1024,
+        max_tokens: 4096,
         messages: [
           {
             role: 'user',
-            content: `당신은 사용자의 세컨드 브레인(지식 관리 시스템)에 저장된 노트를 분석하는 AI 비서입니다.
-
-아래는 사용자가 저장한 노트들입니다:
+            content: `아래는 사용자의 세컨드 브레인 노트다.
 
 ${context}
 
 ---
 
-사용자 질문: ${query}
+질문: ${query}
 
-위 노트들을 바탕으로 한국어로 답변해주세요. 관련 노트를 참조하여 구체적으로 답변하고, 노트에 없는 내용은 없다고 말해주세요.`,
+노트 기반으로 답변해. 규칙:
+- 반말/간결체 사용 (예: ~이다, ~한다, ~임)
+- 서두 인사·안내 문구 없이 바로 본론
+- 긴 문장은 압축 (예: "테스트할 때 다음을 확인해야 합니다:" → "테스트 시 확인사항:")
+- 불릿/번호로 구조화
+- 노트에 없는 내용은 "노트에 없음"으로 표기`,
           },
         ],
       }),
