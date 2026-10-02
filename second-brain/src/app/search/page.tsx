@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Sparkles, Search, FileText, Loader2, AlertCircle, Settings, Clock, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { fetchNotes } from '@/lib/db';
 import type { Note } from '@/types';
+import MarkdownContent from '@/components/MarkdownContent';
 
 const CATEGORY_LABELS: Record<string, string> = {
   idea: '아이디어',
@@ -248,7 +249,7 @@ export default function AISearchPage() {
               노트를 분석하고 있습니다...
             </div>
           ) : (
-            <div className="text-sm whitespace-pre-wrap leading-relaxed">{aiAnswer}</div>
+            <div className="text-sm leading-relaxed"><MarkdownContent text={aiAnswer} /></div>
           )}
         </div>
       )}
@@ -332,7 +333,7 @@ export default function AISearchPage() {
                           <div className="text-xs text-[var(--muted)] mt-2 mb-1">질문</div>
                           <div className="text-sm mb-3 whitespace-pre-wrap">{item.query}</div>
                           <div className="text-xs text-[var(--muted)] mb-1">AI 답변</div>
-                          <div className="text-sm whitespace-pre-wrap leading-relaxed bg-purple-50 rounded-lg p-3">{item.answer}</div>
+                          <div className="text-sm leading-relaxed bg-purple-50 rounded-lg p-3"><MarkdownContent text={item.answer} /></div>
                         </div>
                       )}
                     </div>

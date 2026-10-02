@@ -11,6 +11,7 @@ import { uploadFile, validateFile, getFileIcon, formatFileSize } from '@/lib/fil
 import type { Note, Todo, NoteCategory, TodoStatus, Attachment } from '@/types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import MarkdownContent from '@/components/MarkdownContent';
 
 type Tab = 'notes' | 'todos' | 'research' | 'graph';
 
@@ -277,8 +278,8 @@ export default function ViewerPage() {
                     </span>
                   </div>
                   <h2 className="text-xl font-bold mb-4">{selectedNote.title}</h2>
-                  <div className="text-sm text-[var(--foreground)] whitespace-pre-wrap leading-relaxed">
-                    <Linkify text={selectedNote.content} />
+                  <div className="text-sm text-[var(--foreground)] leading-relaxed">
+                    <MarkdownContent text={selectedNote.content} />
                   </div>
                   {selectedNote.tags.length > 0 && (
                     <div className="flex gap-1.5 mt-6 flex-wrap">
