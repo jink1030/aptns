@@ -185,28 +185,124 @@ function NotesContent() {
     );
   }
 
-  function parseBulkNotes(text: string): { title: string; content: string }[] {
-    const entries: { title: string; content: string }[] = [];
+  interface ParsedNote {
+    title: string;
+    content: string;
+    category?: NoteCategory;
+    tags?: string[];
+  }
+
+  function parseBulkNotes(text: string): ParsedNote[] {
+    const trimmed = text.trim();
+    if (!trimmed) return [];
+
+    // Format 1: --- separator blocks with 카테고리/제목/태그/내용
+    if (trimmed.includes('\n---\n') && /제목\s*:/.test(trimmed)) {
+      return parseSeparatorFormat(trimmed);
+    }
+    // Format 2: ## header-based markdown sections
+    if (/^#{1,2}\s+\d*\.?\s*/m.test(trimmed)) {
+      return parseMarkdownFormat(trimmed);
+    }
+    // Format 3: simple 제목:/내용: pairs
+    if (/^제목\s*:/m.test(trimmed)) {
+      return parseTitleContentFormat(trimmed);
+    }
+    // Fallback: treat ## headers without numbers
+    if (/^#{1,2}\s+/m.test(trimmed)) {
+      return parseMarkdownFormat(trimmed);
+    }
+    return [];
+  }
+
+  function parseSeparatorFormat(text: string): ParsedNote[] {
+    const categoryMap: Record<string, NoteCategory> = {
+      '아이디어': 'idea', '업무': 'work', '리서치': 'research', '개인': 'personal',
+    };
+    const blocks = text.split(/\n---\n/).filter((b) => b.trim());
+    return blocks.map((block) => {
+      const lines = block.trim().split('\n');
+      let title = '', content = '', category: NoteCategory | undefined, tags: string[] | undefined;
+      let contentStart = false;
+
+      for (const line of lines) {
+        const catMatch = line.match(/^\[카테고리\s*:\s*(.+?)\]/);
+        if (catMatch) { category = categoryMap[catMatch[1].trim()] || undefined; continue; }
+        if (/^제목\s*:\s*/.test(line)) { title = line.replace(/^제목\s*:\s*/, '').trim(); continue; }
+        if (/^태그\s*:\s*/.test(line)) { tags = line.replace(/^태그\s*:\s*/, '').split(',').map((t) => t.trim()).filter(Boolean); continue; }
+        if (/^내용\s*:\s*/.test(line)) { content = line.replace(/^내용\s*:\s*/, ''); contentStart = true; continue; }
+        if (contentStart || title) content += (content ? '\n' : '') + line;
+      }
+      return { title: title || '제목 없음', content: content.trim(), category, tags };
+    }).filter((n) => n.title !== '제목 없음' || n.content);
+  }
+
+  function parseMarkdownFormat(text: string): ParsedNote[] {
+    const sections: ParsedNote[] = [];
+    const lines = text.split('\n');
+    let currentTitle = '';
+    let currentContent = '';
+    let currentTags: string[] | undefined;
+    let mainTitle = '';
+
+    for (const line of lines) {
+      const h1Match = line.match(/^#\s+(.+)/);
+      const h2Match = line.match(/^##\s+(.+)/);
+
+      if (h1Match && !mainTitle) {
+        mainTitle = h1Match[1].trim();
+        continue;
+      }
+
+      if (h2Match) {
+        if (currentTitle) {
+          sections.push({ title: currentTitle, content: currentContent.trim(), tags: currentTags });
+        }
+        currentTitle = h2Match[1].replace(/^\d+\.\s*/, '').trim();
+        currentContent = '';
+        currentTags = undefined;
+        continue;
+      }
+
+      const tagLine = line.match(/^태그\s*:\s*(.+)/);
+      if (tagLine) {
+        currentTags = tagLine[1].split(',').map((t) => t.replace(/#/g, '').trim()).filter(Boolean);
+        continue;
+      }
+
+      if (currentTitle) {
+        currentContent += (currentContent ? '\n' : '') + line;
+      }
+    }
+    if (currentTitle) {
+      sections.push({ title: currentTitle, content: currentContent.trim(), tags: currentTags });
+    }
+
+    if (sections.length === 0 && mainTitle) {
+      sections.push({ title: mainTitle, content: text.replace(/^#\s+.+\n/, '').trim() });
+    }
+
+    return sections.filter((s) => s.content.length > 0);
+  }
+
+  function parseTitleContentFormat(text: string): ParsedNote[] {
+    const entries: ParsedNote[] = [];
     const lines = text.split('\n');
     let currentTitle = '';
     let currentContent = '';
 
     for (const line of lines) {
-      if (line.startsWith('제목:') || line.startsWith('제목 :')) {
-        if (currentTitle) {
-          entries.push({ title: currentTitle.trim(), content: currentContent.trim() });
-        }
+      if (/^제목\s*:\s*/.test(line)) {
+        if (currentTitle) entries.push({ title: currentTitle.trim(), content: currentContent.trim() });
         currentTitle = line.replace(/^제목\s*:\s*/, '');
         currentContent = '';
-      } else if (line.startsWith('내용:') || line.startsWith('내용 :')) {
+      } else if (/^내용\s*:\s*/.test(line)) {
         currentContent = line.replace(/^내용\s*:\s*/, '');
       } else if (currentTitle && line.trim()) {
         currentContent += '\n' + line;
       }
     }
-    if (currentTitle) {
-      entries.push({ title: currentTitle.trim(), content: currentContent.trim() });
-    }
+    if (currentTitle) entries.push({ title: currentTitle.trim(), content: currentContent.trim() });
     return entries;
   }
 
@@ -216,15 +312,15 @@ function NotesContent() {
     if (parsedBulkNotes.length === 0) return;
     setBulkImporting(true);
     setBulkResult(null);
-    const tagList = bulkTags.split(',').map((t) => t.trim()).filter(Boolean);
+    const defaultTags = bulkTags.split(',').map((t) => t.trim()).filter(Boolean);
     let success = 0;
     for (const entry of parsedBulkNotes) {
       try {
         await createNote({
           title: entry.title,
           content: entry.content,
-          category: bulkCategory,
-          tags: tagList,
+          category: entry.category || bulkCategory,
+          tags: entry.tags || defaultTags,
           linkedNoteIds: [],
         });
         success++;
@@ -578,16 +674,15 @@ function NotesContent() {
 
             <div className="px-5 pb-5 space-y-4">
               <div className="text-xs text-[var(--muted)] bg-gray-50 rounded-lg p-3 leading-relaxed">
-                아래 형식으로 붙여넣으세요. 여러 노트를 한 번에 등록합니다.<br />
-                <code className="bg-white px-1.5 py-0.5 rounded text-[11px] border">제목: 노트 제목</code><br />
-                <code className="bg-white px-1.5 py-0.5 rounded text-[11px] border">내용: 노트 내용 (여러 줄 가능)</code>
+                Claude Projects에서 뽑은 텍스트를 그대로 붙여넣으세요.<br />
+                지원 형식: <code className="bg-white px-1 py-0.5 rounded text-[11px] border">## 제목</code> (마크다운) · <code className="bg-white px-1 py-0.5 rounded text-[11px] border">제목: / 내용:</code> · <code className="bg-white px-1 py-0.5 rounded text-[11px] border">---</code> 구분
               </div>
 
               <textarea
                 value={bulkText}
                 onChange={(e) => { setBulkText(e.target.value); setBulkResult(null); }}
                 rows={12}
-                placeholder={`제목: 아파트케어 비전\n내용: 법적 근거 기반의 판단·문서·민원·시설관리를 자동화해...\n\n제목: 회원 유형 4가지\n내용: 비회원 → 일반회원 → 단지등록 회원...`}
+                placeholder={`## 1. 현재 상태 요약\n- 홈 개인화 대시보드 PRD 초안 v0.3 작성 완료\n- 클릭형 목업 v2 완성\n\n## 2. 논의된 방안\n- 개인화 4축: 지역 · 단지 규모 · 장수계 연동 여부 · 시즌성\n...\n\n또는\n\n제목: 아파트케어 비전\n내용: 법적 근거 기반의 판단·문서·민원·시설관리를 자동화해...`}
                 className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)] resize-none font-mono"
               />
 
@@ -620,13 +715,27 @@ function NotesContent() {
                   <div className="text-xs font-medium text-[var(--muted)] mb-2">
                     미리보기: {parsedBulkNotes.length}개 노트 감지
                   </div>
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {parsedBulkNotes.map((entry, i) => (
                       <div key={i} className="flex items-start gap-2 text-xs">
-                        <span className="text-[var(--accent)] font-mono mt-0.5">{i + 1}.</span>
-                        <div className="min-w-0">
-                          <div className="font-medium truncate">{entry.title}</div>
-                          <div className="text-[var(--muted)] line-clamp-1">{entry.content.slice(0, 80)}</div>
+                        <span className="text-[var(--accent)] font-mono mt-0.5 flex-shrink-0">{i + 1}.</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            {entry.category && (
+                              <span className={`badge badge-${entry.category} text-[10px] px-1 py-0`}>
+                                {CATEGORIES.find((c) => c.value === entry.category)?.label}
+                              </span>
+                            )}
+                            <span className="font-medium truncate">{entry.title}</span>
+                          </div>
+                          <div className="text-[var(--muted)] line-clamp-1">{entry.content.slice(0, 100)}</div>
+                          {entry.tags && entry.tags.length > 0 && (
+                            <div className="flex gap-1 mt-0.5">
+                              {entry.tags.slice(0, 5).map((t) => (
+                                <span key={t} className="text-[9px] px-1 bg-gray-100 rounded text-[var(--muted)]">#{t}</span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
